@@ -50,6 +50,16 @@ export const Route = createFileRoute("/vendedor")({
 });
 
 function VendedorPage() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const role = typeof window !== "undefined" ? sessionStorage.getItem("nexmove_role") : null;
+    if (role === "CORRETOR") {
+      toast.error("Acesso restrito! O canal do vendedor é exclusivo para o time interno.");
+      navigate({ to: "/corretor" });
+    }
+  }, [navigate]);
+
   const user = DEMO_PROFILES.find((profile) => profile.id === "u-vend-tuane") ?? DEMO_PROFILES[0]!;
   const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);
   const [drawer, setDrawer] = useState<string | null>(null);

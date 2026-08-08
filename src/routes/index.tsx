@@ -133,9 +133,12 @@ function HomePage() {
           cleanLogin.includes("projeto@") ||
           cleanLogin.includes("entreriosdesign")
         ) {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("nexmove_role", "ADMIN");
+            sessionStorage.setItem("nexmove_user_id", "u-dir-tuane");
+          }
           toast.success("Bem-vinda, Tuane Carvalho Lopes! Acesso liberado.");
           setActiveAxis(null);
-          // If accessing via Incorporadora axis, go to Diretoria, otherwise Vendedor/Consultor
           const target = activeAxis.key === "incorporadora" ? "/diretoria?user=tuane" : "/vendedor";
           navigate({ to: target });
           return;
@@ -143,6 +146,10 @@ function HomePage() {
 
         // Exact and fuzzy match for Bianca (Diretoria & Curadoria)
         if (cleanLogin.includes("bianca")) {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("nexmove_role", "ADMIN");
+            sessionStorage.setItem("nexmove_user_id", "u-dir-bianca");
+          }
           toast.success("Bem-vinda, Bianca Reis! Acessando painel exclusivo de Diretoria...");
           setActiveAxis(null);
           navigate({ to: "/diretoria?user=bianca" });
@@ -151,17 +158,25 @@ function HomePage() {
 
         // Exact and fuzzy match for Luis Leme (Corretor)
         if (cleanLogin.includes("luis") || cleanLogin.includes("leme")) {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("nexmove_role", "CORRETOR");
+            sessionStorage.setItem("nexmove_user_id", "u-corr-luis");
+          }
           toast.success("Bem-vindo, Luis Leme! Acessando seus 136 leads...");
           setActiveAxis(null);
-          navigate({ to: "/corretor" });
+          navigate({ to: "/corretor?user=luisleme" });
           return;
         }
 
         // Exact and fuzzy match for Isly Fernandes (Corretora)
         if (cleanLogin.includes("isly")) {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("nexmove_role", "CORRETOR");
+            sessionStorage.setItem("nexmove_user_id", "u-corr-isly");
+          }
           toast.success("Bem-vinda, Isly Fernandes! Acessando seu painel...");
           setActiveAxis(null);
-          navigate({ to: "/corretor" });
+          navigate({ to: "/corretor?user=isly" });
           return;
         }
 

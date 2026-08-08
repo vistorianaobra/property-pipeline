@@ -43,7 +43,17 @@ export const Route = createFileRoute("/diretoria")({
 });
 
 function DiretoriaPage() {
+  const navigate = useNavigate();
   const search = Route.useSearch();
+
+  useEffect(() => {
+    const role = typeof window !== "undefined" ? sessionStorage.getItem("nexmove_role") : null;
+    if (role === "CORRETOR") {
+      toast.error("Acesso restrito! O painel da Diretoria é exclusivo para a diretoria.");
+      navigate({ to: "/corretor" });
+    }
+  }, [navigate]);
+
   const directors = DEMO_PROFILES.filter((profile) => profile.role === "ADMIN");
   
   // Dedicated profile identification without cross-switching
