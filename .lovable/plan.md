@@ -73,3 +73,23 @@ regras deles estiverem definidas.
   A chave publicável no cliente é normal e segura, com RLS ativo.
 - Criação de usuário usa o cliente admin carregado dentro do handler.
 - Realtime dos KPIs via canal Supabase no cliente, invalidando as queries.
+
+## Referência visual (NEXMOVE)
+
+A captura enviada define o estilo a manter:
+
+- Fundo creme quase branco (#fcfbf8), cartões brancos com bordas finas cinza —
+  sem sombras pesadas, sem cantos muito arredondados.
+- Títulos em serifada elegante ("Bom dia, Tuane."), rótulos e labels em
+  sans-serif maiúscula com espaçamento entre letras (`MEUS FECHAMENTOS (MÊS)`).
+- Números de KPI grandes em serifada; destaque positivo em verde escuro.
+- Botão de ação principal preto, retangular, com ícone `+`.
+- Sidebar clara e fixa: logo `NEXMOVE`, bloco de perfil com avatar redondo,
+  nome e cargo em maiúscula, itens de menu com ícones e item ativo em bege,
+  e "Configurações" fixado ao pé.
+- Kanban: colunas como cartões com cabeçalho em maiúscula + contador à direita,
+  separador fino, área de cards ampla.
+- Data no topo em maiúscula ("PAINEL • SÁBADO, 08 DE AGOSTO").
+
+Esses valores vão para os tokens do design system (cores, fontes, raio, bordas)
+em vez de classes fixas, com suporte a dark mode.
