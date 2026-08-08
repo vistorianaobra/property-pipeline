@@ -1,4 +1,6 @@
-import { Trash2 } from "lucide-react";
+import { Copy, Check, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +28,35 @@ export function KanbanBoard({
   onMove?: (leadId: string, status: LeadStatus) => void;
   onDelete?: (leadId: string) => void;
 }) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const nameOf = (id: string) => profiles.find((p) => p.id === id)?.nome ?? "—";
+
+  const handleCopyPhone = (leadId: string, phone: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(phone);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = phone;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+    } catch {}
+
+    setCopiedId(leadId);
+    toast.success(`Número ${phone} copiado! Dê Ctrl+V no WhatsApp.`, {
+      duration: 3000,
+    });
+
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
+  };
 
   return (
     <section className="mt-12">
@@ -93,19 +123,29 @@ export function KanbanBoard({
 
                       <p className="mt-1.5 text-xs text-muted-foreground">{lead.empreendimento}</p>
 
-                      {/* Direct WhatsApp Call-to-Action for Tuane */}
+                      {/* Direct Copy-to-Clipboard Action for Tuane */}
                       {lead.telefone_cliente && (
-                        <a
-                          href={`https://wa.me/${lead.telefone_cliente.replace(/\D/g, "")}?text=${encodeURIComponent("Olá! Sou a Tuane Carvalho Lopes da Entre Rios / Vistoria na Obra. Gostaria de conversar sobre o seu imóvel.")}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2.5 inline-flex items-center justify-center gap-1.5 w-full bg-[#25D366]/10 hover:bg-[#25D366] text-[#1E7E34] hover:text-white px-2.5 py-1.5 rounded-sm text-xs font-medium transition-all no-underline border border-[#25D366]/30"
+                        <button
+                          type="button"
+                          onClick={(e) => handleCopyPhone(lead.id, lead.telefone_cliente, e)}
+                          className={`mt-2.5 inline-flex items-center justify-center gap-2 w-full px-2.5 py-2 rounded-sm text-xs font-semibold tracking-wide transition-all cursor-pointer border ${
+                            copiedId === lead.id
+                              ? "bg-emerald-700 border-emerald-700 text-white shadow-sm"
+                              : "bg-[#FAF8F5] hover:bg-[#F2ECE1] text-[#1F1E1B] border-[#E4DFD5] hover:border-[#1F1E1B]/40"
+                          }`}
                         >
-                          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                            <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 0 0 1.335 4.978L2 22l5.188-1.361a9.924 9.924 0 0 0 4.817 1.239h.005c5.507 0 9.99-4.478 9.99-9.985.001-2.67-1.037-5.18-2.927-7.072C17.18 3.037 14.67 2 12.012 2zm5.717 14.28c-.247.696-1.442 1.282-1.996 1.356-.505.068-1.162.102-1.85-.12a9.421 9.421 0 0 1-4.017-2.483 9.49 9.49 0 0 1-2.433-3.923c-.392-1.133-.04-1.954.218-2.316.223-.314.502-.456.657-.557.155-.101.309-.126.433-.126h.314c.144 0 .341-.013.51.393.206.495.706 1.724.768 1.849.062.126.103.271.015.441-.088.172-.175.29-.35.49-.175.202-.371.44-.53.593-.176.168-.361.352-.155.707.206.353.918 1.513 1.968 2.45a7.842 7.842 0 0 0 2.859 1.764c.371.18.598.152.825-.098.226-.252.989-1.156 1.246-1.552.258-.396.516-.328.877-.193.36.135 2.292 1.08 2.686 1.277.394.197.658.293.755.457.098.163.098.948-.149 1.644z" />
-                          </svg>
-                          WhatsApp {lead.telefone_cliente}
-                        </a>
+                          {copiedId === lead.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <span>COPIADO COM SUCESSO!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-[#787368]" />
+                              <span>COPIAR NÚMERO ({lead.telefone_cliente})</span>
+                            </>
+                          )}
+                        </button>
                       )}
 
                       <dl className="mt-3 space-y-1 text-xs text-muted-foreground border-t border-border/40 pt-2">
