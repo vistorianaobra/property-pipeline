@@ -78,21 +78,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NEXMOVE — CRM Inteligente" },
+      { title: "NEXMOVE CRM" },
       {
         name: "description",
         content:
-          "CRM operacional imobiliário: funil Kanban, KPIs em tempo real, gestão de equipes e chamados.",
+          "Um método silencioso, um resultado preciso.",
       },
       { name: "author", content: "NEXMOVE" },
-      { property: "og:title", content: "NEXMOVE — CRM Inteligente" },
+      { property: "og:title", content: "NEXMOVE CRM" },
       {
         property: "og:description",
         content:
-          "CRM operacional imobiliário: funil Kanban, KPIs em tempo real, gestão de equipes e chamados.",
+          "Um método silencioso, um resultado preciso.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://erhubsistema.netlify.app/og-image.jpg" },
+      { property: "og:image:type", content: "image/jpeg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "1200" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://erhubsistema.netlify.app/og-image.jpg" },
     ],
     links: [
       {
@@ -105,7 +110,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@400;500;600&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,

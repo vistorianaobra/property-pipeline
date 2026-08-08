@@ -18,9 +18,42 @@ const ICONS = {
   back: ArrowLeft,
 } as const;
 
+import { useRef, useState } from "react";
+import { Camera } from "lucide-react";
+import { toast } from "sonner";
+
 export function AppSidebar({ user, items }: { user: Profile; items: NavItem[] }) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatar_url);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setAvatarUrl(result);
+      user.avatar_url = result;
+      toast.success("Foto de perfil atualizada com sucesso!");
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       <div className="px-6 py-8">
         <Link to="/" className="label-caps text-sm tracking-[0.28em] text-sidebar-foreground">
           NEXMOVE
@@ -28,12 +61,23 @@ export function AppSidebar({ user, items }: { user: Profile; items: NavItem[] })
       </div>
 
       <div className="flex items-start gap-3 px-6 pb-8">
-        <Avatar className="size-10">
-          {user.avatar_url ? <AvatarImage src={user.avatar_url} alt={user.nome} /> : null}
-          <AvatarFallback className="bg-sidebar-accent text-xs">
-            {initials(user.nome)}
-          </AvatarFallback>
-        </Avatar>
+        <button
+          type="button"
+          onClick={handleAvatarClick}
+          title="Clique para enviar sua foto de perfil"
+          className="group relative cursor-pointer outline-none"
+        >
+          <Avatar className="size-10 border border-sidebar-border transition-transform group-hover:scale-105">
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt={user.nome} /> : null}
+            <AvatarFallback className="bg-sidebar-accent text-xs">
+              {initials(user.nome)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+            <Camera className="size-4 text-white" />
+          </div>
+        </button>
+
         <div className="min-w-0">
           <p className="text-sm font-semibold leading-tight text-sidebar-foreground">{user.nome}</p>
           <p className="label-caps mt-1 text-muted-foreground">{user.cargo}</p>
