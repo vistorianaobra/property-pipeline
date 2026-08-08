@@ -7,6 +7,7 @@ export interface Profile {
   nome: string;
   role: Role;
   cargo: string;
+  email: string;
   equipe_id: string | null;
   avatar_url: string | null;
   whatsapp: string;
@@ -52,7 +53,8 @@ export const DEMO_PROFILES: Profile[] = [
     id: "u-dir-tuane",
     nome: "Tuane Carvalho Lopes",
     role: "ADMIN",
-    cargo: "Sócia Diretora",
+    cargo: "DIRETORA COMERCIAL",
+    email: "projeto@entreriosdesign.com",
     equipe_id: null,
     avatar_url: null,
     whatsapp: "(11) 92093-7265",
@@ -62,10 +64,11 @@ export const DEMO_PROFILES: Profile[] = [
     id: "u-dir-bianca",
     nome: "Bianca Reis",
     role: "ADMIN",
-    cargo: "Sócia Diretora",
+    cargo: "SOCIA CURADORA E DIRETORA CRIATIVA",
+    email: "entreriosbianca@gmail.com",
     equipe_id: null,
     avatar_url: null,
-    whatsapp: "(11) 99999-0002",
+    whatsapp: "(11) 99702-0811",
     username: "bianca",
   },
 ];

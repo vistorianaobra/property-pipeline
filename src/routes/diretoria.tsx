@@ -40,7 +40,10 @@ export const Route = createFileRoute("/diretoria")({
 });
 
 function DiretoriaPage() {
-  const user = DEMO_PROFILES.find((profile) => profile.role === "ADMIN")!;
+  const directors = DEMO_PROFILES.filter((profile) => profile.role === "ADMIN");
+  const [selectedDirectorId, setSelectedDirectorId] = useState<string>(directors[0]?.id ?? "u-dir-tuane");
+  const user = directors.find((d) => d.id === selectedDirectorId) ?? directors[0]!;
+  
   const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);
   const [chamados, setChamados] = useState<Chamado[]>(DEMO_CHAMADOS);
   const [drawer, setDrawer] = useState<string | null>(null);
@@ -165,7 +168,25 @@ function DiretoriaPage() {
       <PageHeader
         eyebrow={`Diretoria • ${todayLabel()}`}
         title={`${greeting()}, ${user.nome.split(" ")[0]}.`}
-        subtitle={`${abertos.length} chamado(s) aguardando decisão da diretoria.`}
+        subtitle={`${user.cargo} • ${abertos.length} chamado(s) em aberto.`}
+        action={
+          <div className="flex items-center gap-2 bg-[#FAF8F5] p-1 border border-[#E4DFD5]">
+            {directors.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setSelectedDirectorId(d.id)}
+                className={`px-3 py-1.5 text-xs font-medium transition-all ${
+                  d.id === user.id
+                    ? "bg-[#1F1E1B] text-[#FAF8F5] shadow-xs"
+                    : "text-[#787368] hover:text-[#1F1E1B]"
+                }`}
+              >
+                {d.nome.split(" ")[0]} ({d.username === "tuane" ? "Comercial" : "Criativa"})
+              </button>
+            ))}
+          </div>
+        }
       />
 
       <div className="mt-10">
