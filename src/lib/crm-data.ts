@@ -98,7 +98,7 @@ export const DEMO_PROFILES: Profile[] = [
     nome: "Luis Leme",
     role: "CORRETOR",
     cargo: "Corretor Parceiro",
-    email: "luis.leme@entreriosdesign.com",
+    email: "luisleme@gmail.com",
     equipe_id: "u-vend-tuane",
     avatar_url: null,
     whatsapp: "(11) 99999-0011",
