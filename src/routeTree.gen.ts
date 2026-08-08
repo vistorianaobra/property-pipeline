@@ -10,6 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ChamadosRouteImport } from './routes/chamados'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as CorretorRouteImport } from './routes/corretor'
 import { Route as DiretoriaRouteImport } from './routes/diretoria'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as VendedorRouteImport } from './routes/vendedor'
@@ -17,6 +20,21 @@ import { Route as VendedorRouteImport } from './routes/vendedor'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChamadosRoute = ChamadosRouteImport.update({
+  id: '/chamados',
+  path: '/chamados',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CorretorRoute = CorretorRouteImport.update({
+  id: '/corretor',
+  path: '/corretor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiretoriaRoute = DiretoriaRouteImport.update({
@@ -37,12 +55,18 @@ const VendedorRoute = VendedorRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chamados': typeof ChamadosRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/corretor': typeof CorretorRoute
   '/diretoria': typeof DiretoriaRoute
   '/reset-password': typeof ResetPasswordRoute
   '/vendedor': typeof VendedorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chamados': typeof ChamadosRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/corretor': typeof CorretorRoute
   '/diretoria': typeof DiretoriaRoute
   '/reset-password': typeof ResetPasswordRoute
   '/vendedor': typeof VendedorRoute
@@ -50,20 +74,48 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chamados': typeof ChamadosRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/corretor': typeof CorretorRoute
   '/diretoria': typeof DiretoriaRoute
   '/reset-password': typeof ResetPasswordRoute
   '/vendedor': typeof VendedorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/diretoria' | '/reset-password' | '/vendedor'
+  fullPaths:
+    | '/'
+    | '/chamados'
+    | '/configuracoes'
+    | '/corretor'
+    | '/diretoria'
+    | '/reset-password'
+    | '/vendedor'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/diretoria' | '/reset-password' | '/vendedor'
-  id: '__root__' | '/' | '/diretoria' | '/reset-password' | '/vendedor'
+  to:
+    | '/'
+    | '/chamados'
+    | '/configuracoes'
+    | '/corretor'
+    | '/diretoria'
+    | '/reset-password'
+    | '/vendedor'
+  id:
+    | '__root__'
+    | '/'
+    | '/chamados'
+    | '/configuracoes'
+    | '/corretor'
+    | '/diretoria'
+    | '/reset-password'
+    | '/vendedor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChamadosRoute: typeof ChamadosRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
+  CorretorRoute: typeof CorretorRoute
   DiretoriaRoute: typeof DiretoriaRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VendedorRoute: typeof VendedorRoute
@@ -76,6 +128,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chamados': {
+      id: '/chamados'
+      path: '/chamados'
+      fullPath: '/chamados'
+      preLoaderRoute: typeof ChamadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/corretor': {
+      id: '/corretor'
+      path: '/corretor'
+      fullPath: '/corretor'
+      preLoaderRoute: typeof CorretorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/diretoria': {
@@ -104,6 +177,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChamadosRoute: ChamadosRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
+  CorretorRoute: CorretorRoute,
   DiretoriaRoute: DiretoriaRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VendedorRoute: VendedorRoute,
