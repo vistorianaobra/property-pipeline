@@ -50,7 +50,7 @@ export const Route = createFileRoute("/vendedor")({
 });
 
 function VendedorPage() {
-  const user = DEMO_PROFILES.find((profile) => profile.role === "VENDEDOR")!;
+  const user = DEMO_PROFILES.find((profile) => profile.role === "VENDEDOR") ?? DEMO_PROFILES[0]!;
   const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);

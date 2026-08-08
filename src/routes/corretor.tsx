@@ -48,7 +48,7 @@ export const Route = createFileRoute("/corretor")({
 });
 
 function CorretorPage() {
-  const user = DEMO_PROFILES.find((profile) => profile.role === "CORRETOR")!;
+  const user = DEMO_PROFILES.find((profile) => profile.role === "CORRETOR") ?? DEMO_PROFILES[0]!;
   const [leads, setLeads] = useState<Lead[]>(
     DEMO_LEADS.filter((lead) => lead.corretor_id === user.id),
   );
