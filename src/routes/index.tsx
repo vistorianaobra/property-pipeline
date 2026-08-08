@@ -121,7 +121,29 @@ function HomePage() {
       if (authMode === "login") {
         const cleanLogin = email.trim().toLowerCase();
         
-        // Find matching profile
+        // Exact and fuzzy match for Tuane (Diretoria & Consultoria)
+        if (
+          cleanLogin.includes("tuane") ||
+          cleanLogin.includes("projeto@") ||
+          cleanLogin.includes("entreriosdesign")
+        ) {
+          toast.success("Bem-vinda, Tuane Carvalho Lopes! Acesso liberado.");
+          setActiveAxis(null);
+          // If accessing via Incorporadora axis, go to Diretoria, otherwise Vendedor/Consultor
+          const target = activeAxis.key === "incorporadora" ? "/diretoria?user=tuane" : "/vendedor";
+          navigate({ to: target });
+          return;
+        }
+
+        // Exact and fuzzy match for Bianca (Diretoria & Curadoria)
+        if (cleanLogin.includes("bianca")) {
+          toast.success("Bem-vinda, Bianca Reis! Acessando painel exclusivo de Diretoria...");
+          setActiveAxis(null);
+          navigate({ to: "/diretoria?user=bianca" });
+          return;
+        }
+
+        // Exact and fuzzy match for Luis Leme (Corretor)
         if (cleanLogin.includes("luis") || cleanLogin.includes("leme")) {
           toast.success("Bem-vindo, Luis Leme! Acessando seus 136 leads...");
           setActiveAxis(null);
@@ -129,6 +151,7 @@ function HomePage() {
           return;
         }
 
+        // Exact and fuzzy match for Isly Fernandes (Corretora)
         if (cleanLogin.includes("isly")) {
           toast.success("Bem-vinda, Isly Fernandes! Acessando seu painel...");
           setActiveAxis(null);
@@ -136,21 +159,11 @@ function HomePage() {
           return;
         }
 
-        if (cleanLogin.includes("tuane") || cleanLogin.includes("projeto@")) {
-          toast.success("Bem-vinda, Tuane! Acessando seu canal de vendas...");
-          setActiveAxis(null);
-          navigate({ to: activeAxis.targetRoute });
-          return;
-        }
-
-        if (cleanLogin.includes("bianca")) {
-          toast.success("Bem-vinda, Bianca Reis! Acessando painel da diretoria...");
-          setActiveAxis(null);
-          navigate({ to: "/diretoria" });
-          return;
-        }
-
-        toast.success(`Bem-vindo! Login efetuado no portal ${activeAxis.title}.`);
+        // Universal fallback: Any valid login succeeds
+        toast.success(`Acesso autorizado! Bem-vindo ao portal ${activeAxis.title}.`);
+        setActiveAxis(null);
+        navigate({ to: activeAxis.targetRoute });
+        return;
       } else {
         toast.success(`Autocadastro realizado com sucesso para ${activeAxis.title}!`);
       }
