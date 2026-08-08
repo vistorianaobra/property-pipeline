@@ -46,14 +46,10 @@ function DiretoriaPage() {
   const search = Route.useSearch();
   const directors = DEMO_PROFILES.filter((profile) => profile.role === "ADMIN");
   
-  const initialId = search.user === "bianca"
-    ? "u-dir-bianca"
-    : search.user === "tuane"
-    ? "u-dir-tuane"
-    : directors[0]?.id ?? "u-dir-tuane";
-
-  const [selectedDirectorId, setSelectedDirectorId] = useState<string>(initialId);
-  const user = directors.find((d) => d.id === selectedDirectorId) ?? directors[0]!;
+  // Dedicated profile identification without cross-switching
+  const isBianca = search.user === "bianca";
+  const targetId = isBianca ? "u-dir-bianca" : "u-dir-tuane";
+  const user = directors.find((d) => d.id === targetId) ?? directors[0]!;
   
   const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);
   const [chamados, setChamados] = useState<Chamado[]>(DEMO_CHAMADOS);
@@ -170,34 +166,16 @@ function DiretoriaPage() {
     <CrmShell
       user={user}
       items={[
-        { label: "Funil global", to: "/diretoria", icon: "kanban" },
-        { label: "Painel do vendedor", to: "/vendedor", icon: "users" },
+        { label: "Funil da Diretoria", to: "/diretoria", icon: "kanban" },
+        { label: "Painel de Vendas", to: "/vendedor", icon: "users" },
         { label: "Chamados", to: "/chamados", icon: "tickets" },
         { label: "Sair", to: "/", icon: "back" },
       ]}
     >
       <PageHeader
-        eyebrow={`Diretoria • ${todayLabel()}`}
+        eyebrow={`${isBianca ? "Diretoria Criativa & Curadoria" : "Diretoria Comercial"} • ${todayLabel()}`}
         title={`${greeting()}, ${user.nome.split(" ")[0]}.`}
-        subtitle={`${user.cargo} • ${abertos.length} chamado(s) em aberto.`}
-        action={
-          <div className="flex items-center gap-2 bg-[#FAF8F5] p-1 border border-[#E4DFD5]">
-            {directors.map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => setSelectedDirectorId(d.id)}
-                className={`px-3 py-1.5 text-xs font-medium transition-all ${
-                  d.id === user.id
-                    ? "bg-[#1F1E1B] text-[#FAF8F5] shadow-xs"
-                    : "text-[#787368] hover:text-[#1F1E1B]"
-                }`}
-              >
-                {d.nome.split(" ")[0]} ({d.username === "tuane" ? "Comercial" : "Criativa"})
-              </button>
-            ))}
-          </div>
-        }
+        subtitle={`${user.cargo} • Gestão autônoma e panorama geral.`}
       />
 
       <div className="mt-10">
