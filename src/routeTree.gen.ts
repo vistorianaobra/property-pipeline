@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DiretoriaRouteImport } from './routes/diretoria'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as VendedorRouteImport } from './routes/vendedor'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VendedorRoute = VendedorRouteImport.update({
+  id: '/vendedor',
+  path: '/vendedor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/diretoria': typeof DiretoriaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/vendedor': typeof VendedorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/diretoria': typeof DiretoriaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/vendedor': typeof VendedorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/diretoria': typeof DiretoriaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/vendedor': typeof VendedorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/diretoria' | '/reset-password'
+  fullPaths: '/' | '/diretoria' | '/reset-password' | '/vendedor'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/diretoria' | '/reset-password'
-  id: '__root__' | '/' | '/diretoria' | '/reset-password'
+  to: '/' | '/diretoria' | '/reset-password' | '/vendedor'
+  id: '__root__' | '/' | '/diretoria' | '/reset-password' | '/vendedor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DiretoriaRoute: typeof DiretoriaRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  VendedorRoute: typeof VendedorRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vendedor': {
+      id: '/vendedor'
+      path: '/vendedor'
+      fullPath: '/vendedor'
+      preLoaderRoute: typeof VendedorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DiretoriaRoute: DiretoriaRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  VendedorRoute: VendedorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
