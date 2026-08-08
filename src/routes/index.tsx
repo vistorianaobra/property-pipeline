@@ -117,11 +117,44 @@ function HomePage() {
 
     setTimeout(() => {
       setIsSubmitting(false);
+
       if (authMode === "login") {
+        const cleanLogin = email.trim().toLowerCase();
+        
+        // Find matching profile
+        if (cleanLogin.includes("luis") || cleanLogin.includes("leme")) {
+          toast.success("Bem-vindo, Luis Leme! Acessando seus 136 leads...");
+          setActiveAxis(null);
+          navigate({ to: "/corretor" });
+          return;
+        }
+
+        if (cleanLogin.includes("isly")) {
+          toast.success("Bem-vinda, Isly Fernandes! Acessando seu painel...");
+          setActiveAxis(null);
+          navigate({ to: "/corretor" });
+          return;
+        }
+
+        if (cleanLogin.includes("tuane") || cleanLogin.includes("projeto@")) {
+          toast.success("Bem-vinda, Tuane! Acessando seu canal de vendas...");
+          setActiveAxis(null);
+          navigate({ to: activeAxis.targetRoute });
+          return;
+        }
+
+        if (cleanLogin.includes("bianca")) {
+          toast.success("Bem-vinda, Bianca Reis! Acessando painel da diretoria...");
+          setActiveAxis(null);
+          navigate({ to: "/diretoria" });
+          return;
+        }
+
         toast.success(`Bem-vindo! Login efetuado no portal ${activeAxis.title}.`);
       } else {
         toast.success(`Autocadastro realizado com sucesso para ${activeAxis.title}!`);
       }
+
       setActiveAxis(null);
       navigate({ to: activeAxis.targetRoute });
     }, 600);
