@@ -21,6 +21,9 @@ import {
 } from "@/lib/crm-data";
 
 export const Route = createFileRoute("/diretoria")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    user: (search.user as string) || (search.socia as string) || undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Painel da Diretoria — NEXMOVE CRM" },
@@ -40,8 +43,16 @@ export const Route = createFileRoute("/diretoria")({
 });
 
 function DiretoriaPage() {
+  const search = Route.useSearch();
   const directors = DEMO_PROFILES.filter((profile) => profile.role === "ADMIN");
-  const [selectedDirectorId, setSelectedDirectorId] = useState<string>(directors[0]?.id ?? "u-dir-tuane");
+  
+  const initialId = search.user === "bianca"
+    ? "u-dir-bianca"
+    : search.user === "tuane"
+    ? "u-dir-tuane"
+    : directors[0]?.id ?? "u-dir-tuane";
+
+  const [selectedDirectorId, setSelectedDirectorId] = useState<string>(initialId);
   const user = directors.find((d) => d.id === selectedDirectorId) ?? directors[0]!;
   
   const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);

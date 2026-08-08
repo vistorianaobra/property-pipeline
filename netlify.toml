@@ -3,6 +3,16 @@
   publish = ".output/public"
 
 [[redirects]]
+  from = "/login.html"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/login"
+  to = "/"
+  status = 301
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
