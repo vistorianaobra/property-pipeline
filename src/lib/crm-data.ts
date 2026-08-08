@@ -71,6 +71,17 @@ export const DEMO_PROFILES: Profile[] = [
     whatsapp: "(11) 99702-0811",
     username: "bianca",
   },
+  {
+    id: "u-vend-tuane",
+    nome: "Tuane Carvalho Lopes",
+    role: "VENDEDOR",
+    cargo: "CONSULTOR ENTRE RIOS / CLOSER",
+    email: "projeto@entreriosdesign.com",
+    equipe_id: null,
+    avatar_url: null,
+    whatsapp: "(11) 92093-7265",
+    username: "tuane-consultor",
+  },
 ];
 
 export const DEMO_LEADS: Lead[] = [];

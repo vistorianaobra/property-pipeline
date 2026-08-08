@@ -33,16 +33,16 @@ import {
 export const Route = createFileRoute("/vendedor")({
   head: () => ({
     meta: [
-      { title: "Painel do Vendedor — NEXMOVE CRM" },
+      { title: "Painel do Consultor Entre Rios — NEXMOVE CRM" },
       {
         name: "description",
         content:
-          "Carteira de leads, funil da equipe de corretores, KPIs de fechamento e cadastro de corretores.",
+          "Canal de vendas ativo, carteira de leads, funil de corretores e KPIs de fechamento de Tuane Carvalho Lopes.",
       },
-      { property: "og:title", content: "Painel do Vendedor — NEXMOVE CRM" },
+      { property: "og:title", content: "Painel do Consultor Entre Rios — NEXMOVE CRM" },
       {
         property: "og:description",
-        content: "Carteira de leads, funil da equipe e cadastro de corretores.",
+        content: "Canal de vendas ativo e funil de recepção de leads de corretores.",
       },
     ],
   }),
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/vendedor")({
 });
 
 function VendedorPage() {
-  const user = DEMO_PROFILES.find((profile) => profile.role === "VENDEDOR") ?? DEMO_PROFILES[0]!;
+  const user = DEMO_PROFILES.find((profile) => profile.id === "u-vend-tuane") ?? DEMO_PROFILES[0]!;
   const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -151,9 +151,9 @@ function VendedorPage() {
       ]}
     >
       <PageHeader
-        eyebrow={`Painel • ${todayLabel()}`}
+        eyebrow={`Consultor Entre Rios • ${todayLabel()}`}
         title={`${greeting()}, ${user.nome.split(" ")[0]}.`}
-        subtitle={`Você tem ${novos.length} novo(s) lead(s) aguardando contato hoje.`}
+        subtitle={`Seu canal de vendas ativo • ${novos.length} lead(s) recebido(s) de corretores.`}
         action={
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
