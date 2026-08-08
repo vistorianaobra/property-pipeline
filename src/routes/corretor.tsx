@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -49,11 +49,15 @@ export const Route = createFileRoute("/corretor")({
 
 function CorretorPage() {
   const corretores = DEMO_PROFILES.filter((profile) => profile.role === "CORRETOR");
-  const [selectedBrokerId, setSelectedBrokerId] = useState<string>(corretores[0]?.id ?? "u-corr-isly");
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>(
+    corretores.find((c) => c.username === "luisleme")?.id ?? corretores[0]?.id ?? "u-corr-luis",
+  );
   const user = corretores.find((c) => c.id === selectedBrokerId) ?? corretores[0] ?? DEMO_PROFILES[0]!;
 
-  const [leads, setLeads] = useState<Lead[]>(
-    DEMO_LEADS.filter((lead) => lead.corretor_id === user.id),
+  const [allLeads, setAllLeads] = useState<Lead[]>(DEMO_LEADS);
+  const leads = useMemo(
+    () => allLeads.filter((lead) => lead.corretor_id === user.id),
+    [allLeads, user.id],
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -145,7 +149,7 @@ function CorretorPage() {
                 className="space-y-4"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  setLeads((current) => [
+                  setAllLeads((current) => [
                     {
                       id: `l-${current.length + 1}-${form.nome_cliente.length}`,
                       nome_cliente: form.nome_cliente,
@@ -154,7 +158,7 @@ function CorretorPage() {
                       previsao_chaves: form.previsao_chaves,
                       status: "NOVO",
                       corretor_id: user.id,
-                      vendedor_id: user.equipe_id ?? "u-vend-1",
+                      vendedor_id: user.equipe_id ?? "u-vend-tuane",
                       valor: 0,
                       created_at: new Date().toISOString(),
                     },
