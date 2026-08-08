@@ -82,6 +82,28 @@ export const DEMO_PROFILES: Profile[] = [
     whatsapp: "(11) 92093-7265",
     username: "tuane-consultor",
   },
+  {
+    id: "u-corr-isly",
+    nome: "Isly Fernandes",
+    role: "CORRETOR",
+    cargo: "Corretora Parceira",
+    email: "isly.fernandes@entreriosdesign.com",
+    equipe_id: "u-vend-tuane",
+    avatar_url: null,
+    whatsapp: "(11) 99999-0010",
+    username: "isly",
+  },
+  {
+    id: "u-corr-luis",
+    nome: "Luis Leme",
+    role: "CORRETOR",
+    cargo: "Corretor Parceiro",
+    email: "luis.leme@entreriosdesign.com",
+    equipe_id: "u-vend-tuane",
+    avatar_url: null,
+    whatsapp: "(11) 99999-0011",
+    username: "luisleme",
+  },
 ];
 
 export const DEMO_LEADS: Lead[] = [];

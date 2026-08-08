@@ -48,7 +48,10 @@ export const Route = createFileRoute("/corretor")({
 });
 
 function CorretorPage() {
-  const user = DEMO_PROFILES.find((profile) => profile.role === "CORRETOR") ?? DEMO_PROFILES[0]!;
+  const corretores = DEMO_PROFILES.filter((profile) => profile.role === "CORRETOR");
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>(corretores[0]?.id ?? "u-corr-isly");
+  const user = corretores.find((c) => c.id === selectedBrokerId) ?? corretores[0] ?? DEMO_PROFILES[0]!;
+
   const [leads, setLeads] = useState<Lead[]>(
     DEMO_LEADS.filter((lead) => lead.corretor_id === user.id),
   );
@@ -73,7 +76,7 @@ function CorretorPage() {
       id: "ativos",
       label: "Em andamento",
       value: String(ativos.length),
-      hint: "Aguardando o vendedor (Ver)",
+      hint: "Aguardando a consultora (Ver)",
     },
     {
       id: "fechados",
@@ -100,10 +103,29 @@ function CorretorPage() {
       ]}
     >
       <PageHeader
-        eyebrow={`Corretor • ${todayLabel()}`}
+        eyebrow={`Corretor Parceiro • ${todayLabel()}`}
         title={`${greeting()}, ${user.nome.split(" ")[0]}.`}
-        subtitle={`${ativos.length} lead(s) em andamento com o seu vendedor.`}
+        subtitle={`${ativos.length} lead(s) em andamento com Tuane (Consultora).`}
         action={
+          <div className="flex flex-wrap items-center gap-3">
+            {corretores.length > 0 && (
+              <div className="flex items-center gap-1 bg-[#FAF8F5] p-1 border border-[#E4DFD5]">
+                {corretores.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelectedBrokerId(c.id)}
+                    className={`px-3 py-1.5 text-xs font-medium transition-all ${
+                      c.id === user.id
+                        ? "bg-[#1F1E1B] text-[#FAF8F5]"
+                        : "text-[#787368] hover:text-[#1F1E1B]"
+                    }`}
+                  >
+                    {c.nome}
+                  </button>
+                ))}
+              </div>
+            )}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button className="rounded-sm">
@@ -198,7 +220,8 @@ function CorretorPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        }
+        </div>
+      }
       />
 
       <div className="mt-10">
