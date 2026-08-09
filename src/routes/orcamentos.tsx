@@ -86,7 +86,7 @@ function OrcamentosListagem() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {orcamentos.map((orcamento) => (
+                {orcamentos.map((orcamento: any) => (
                   <tr key={orcamento.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-4 py-3 font-semibold">{orcamento.codigo}</td>
                     <td className="px-4 py-3">{orcamento.cliente_nome}</td>

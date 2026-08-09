@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -58,13 +58,13 @@ export function FormularioProduto({
   const [comissaoVendedor, setComissaoVendedor] = useState([10]); // Slider state (7 a 17)
 
   const form = useForm<ProdutoFormValues>({
-    resolver: zodResolver(produtoSchema),
+    resolver: zodResolver(produtoSchema) as any,
     defaultValues: {
       nome: "", sku: "", categoria: "", descricao: "", usabilidade: "",
       custo_fornecedor: 0, frete_entrada: 0, impostos_entrada: 0, custo_operacional: 0,
       estado_origem: "SP", importado: false,
       margem_lucro_alvo_pct: 20, comissao_rt_pct: 10, impostos_venda_pct: 0
-    }
+    } as any
   });
 
   const { watch, control, handleSubmit, setValue } = form;
@@ -125,7 +125,7 @@ export function FormularioProduto({
       (Number(values.margem_lucro_alvo_pct) || 0) + 
       (Number(values.comissao_rt_pct) || 0) + 
       (Number(values.impostos_venda_pct) || 0) + 
-      comissaoVendedor[0];
+      (comissaoVendedor[0] || 0);
 
     // Se as despesas passarem ou igualarem a 100%, a fórmula quebra (Markup infinito).
     // Prevenimos isso limitando a 99% para efeito de cálculo
@@ -156,7 +156,7 @@ export function FormularioProduto({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(handleSalvar)} className="space-y-6 mt-4">
+        <form onSubmit={handleSubmit(handleSalvar as any)} className="space-y-6 mt-4">
           <Tabs defaultValue="vitrine" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="vitrine">1. Vitrine</TabsTrigger>
@@ -216,10 +216,10 @@ export function FormularioProduto({
                 {filtros.map((filtro, idx) => (
                   <div key={idx} className="flex items-center gap-3 mb-2">
                     <Input placeholder="Ex: Cor" value={filtro.chave} onChange={(e) => {
-                      const newF = [...filtros]; newF[idx].chave = e.target.value; setFiltros(newF);
+                      const newF = [...filtros]; if(newF[idx]) newF[idx].chave = e.target.value; setFiltros(newF);
                     }} className="w-1/3" />
                     <Input placeholder="Ex: Preto Fosco" value={filtro.valor} onChange={(e) => {
-                      const newF = [...filtros]; newF[idx].valor = e.target.value; setFiltros(newF);
+                      const newF = [...filtros]; if(newF[idx]) newF[idx].valor = e.target.value; setFiltros(newF);
                     }} className="flex-1" />
                     <Button type="button" variant="ghost" size="icon" onClick={() => setFiltros(filtros.filter((_, i) => i !== idx))}>
                       <Trash2 className="size-4 text-destructive" />

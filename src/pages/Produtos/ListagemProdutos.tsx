@@ -14,7 +14,7 @@ export function ListagemProdutos() {
   const produtos = [];
   
   // This is a temporary user logic to keep the shell working
-  const user = DEMO_PROFILES.find((p) => p.role === "ADMIN") || DEMO_PROFILES[0];
+  const user = DEMO_PROFILES.find((p) => p.role === "ADMIN") || DEMO_PROFILES[0]!;
 
   const handleNovoProduto = () => {
     setProdutoEdit(null);

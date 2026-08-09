@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ function VendedorPage() {
     const role = typeof window !== "undefined" ? sessionStorage.getItem("nexmove_role") : null;
     if (role === "CORRETOR") {
       toast.error("Acesso restrito! O canal do vendedor é exclusivo para o time interno.");
-      navigate({ to: "/corretor" });
+      navigate({ to: "/corretor", search: {} as any });
     }
   }, [navigate]);
 

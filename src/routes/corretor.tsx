@@ -31,7 +31,7 @@ import {
 
 export const Route = createFileRoute("/corretor")({
   validateSearch: (search: Record<string, unknown>) => ({
-    user: (search.user as string) || (search.corretor as string) || undefined,
+    user: (search["user"] as string) || (search["corretor"] as string) || undefined,
   }),
   head: () => ({
     meta: [

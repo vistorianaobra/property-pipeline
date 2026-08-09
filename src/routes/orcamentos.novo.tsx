@@ -58,7 +58,7 @@ function NovoOrcamentoPage() {
     if (user) {
       const parts = user.nome.split(" ");
       const first = (parts[0]?.substring(0, 2) || "XX").toUpperCase();
-      const last = (parts.length > 1 ? parts[parts.length - 1].substring(0, 2) : "XX").toUpperCase();
+      const last = (parts.length > 1 ? parts[parts.length - 1]?.substring(0, 2) || "XX" : "XX").toUpperCase();
       const year = new Date().getFullYear().toString().substring(2);
       // Aqui num cenário real buscaríamos o número sequencial no banco
       const sequencial = "001";
@@ -67,7 +67,7 @@ function NovoOrcamentoPage() {
   }, [user]);
 
   const form = useForm<OrcamentoData>({
-    resolver: zodResolver(orcamentoSchema),
+    resolver: zodResolver(orcamentoSchema) as any,
     defaultValues: {
       cliente_nome: "",
       veio_de_escritorio: false,
@@ -77,7 +77,7 @@ function NovoOrcamentoPage() {
       ambientes: [
         { nome: "Sala de Estar", numero_circuitos: 1, mapa_interruptores: "1 Entrada", itens: [] }
       ]
-    }
+    } as any
   });
 
   const { control, handleSubmit, watch, register } = form;
@@ -161,7 +161,7 @@ function NovoOrcamentoPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-8">
+      <form onSubmit={handleSubmit(onSubmit as any)} className="mt-8 space-y-8">
         
         {/* CABEÇALHO DO CLIENTE */}
         <div className="bg-card border border-border p-6 rounded-lg space-y-6">

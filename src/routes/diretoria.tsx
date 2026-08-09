@@ -22,7 +22,7 @@ import {
 
 export const Route = createFileRoute("/diretoria")({
   validateSearch: (search: Record<string, unknown>) => ({
-    user: (search.user as string) || (search.socia as string) || undefined,
+    user: (search["user"] as string) || (search["socia"] as string) || undefined,
   }),
   head: () => ({
     meta: [
@@ -50,7 +50,7 @@ function DiretoriaPage() {
     const role = typeof window !== "undefined" ? sessionStorage.getItem("nexmove_role") : null;
     if (role === "CORRETOR") {
       toast.error("Acesso restrito! O painel da Diretoria é exclusivo para a diretoria.");
-      navigate({ to: "/corretor" });
+      navigate({ to: "/corretor", search: {} as any });
     }
   }, [navigate]);
 
