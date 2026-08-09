@@ -1,0 +1,3 @@
+ALTER TABLE public.produtos 
+ADD COLUMN IF NOT EXISTS estado_origem VARCHAR(2) DEFAULT 'SP',
+ADD COLUMN IF NOT EXISTS importado BOOLEAN DEFAULT false;

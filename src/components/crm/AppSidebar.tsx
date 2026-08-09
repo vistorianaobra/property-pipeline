@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, LayoutGrid, LifeBuoy, Settings, Users } from "lucide-react";
+import { ArrowLeft, LayoutGrid, LifeBuoy, Settings, Users, Package, FileText, Home } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,7 @@ import { initials, type Profile } from "@/lib/crm-data";
 export interface NavItem {
   label: string;
   to: string;
-  icon: "kanban" | "users" | "tickets" | "back";
+  icon: "kanban" | "users" | "tickets" | "back" | "package" | "file-text" | "home";
 }
 
 const ICONS = {
@@ -16,6 +16,9 @@ const ICONS = {
   users: Users,
   tickets: LifeBuoy,
   back: ArrowLeft,
+  package: Package,
+  "file-text": FileText,
+  home: Home,
 } as const;
 
 import { useRef, useState, useEffect } from "react";

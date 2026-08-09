@@ -14,8 +14,11 @@ import { Route as ChamadosRouteImport } from './routes/chamados'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as CorretorRouteImport } from './routes/corretor'
 import { Route as DiretoriaRouteImport } from './routes/diretoria'
+import { Route as OrcamentosRouteImport } from './routes/orcamentos'
+import { Route as ProdutosRouteImport } from './routes/produtos'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as VendedorRouteImport } from './routes/vendedor'
+import { Route as OrcamentosNovoRouteImport } from './routes/orcamentos.novo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -42,6 +45,16 @@ const DiretoriaRoute = DiretoriaRouteImport.update({
   path: '/diretoria',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrcamentosRoute = OrcamentosRouteImport.update({
+  id: '/orcamentos',
+  path: '/orcamentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProdutosRoute = ProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -52,6 +65,11 @@ const VendedorRoute = VendedorRouteImport.update({
   path: '/vendedor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrcamentosNovoRoute = OrcamentosNovoRouteImport.update({
+  id: '/novo',
+  path: '/novo',
+  getParentRoute: () => OrcamentosRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,8 +77,11 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ConfiguracoesRoute
   '/corretor': typeof CorretorRoute
   '/diretoria': typeof DiretoriaRoute
+  '/orcamentos': typeof OrcamentosRouteWithChildren
+  '/produtos': typeof ProdutosRoute
   '/reset-password': typeof ResetPasswordRoute
   '/vendedor': typeof VendedorRoute
+  '/orcamentos/novo': typeof OrcamentosNovoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,8 +89,11 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ConfiguracoesRoute
   '/corretor': typeof CorretorRoute
   '/diretoria': typeof DiretoriaRoute
+  '/orcamentos': typeof OrcamentosRouteWithChildren
+  '/produtos': typeof ProdutosRoute
   '/reset-password': typeof ResetPasswordRoute
   '/vendedor': typeof VendedorRoute
+  '/orcamentos/novo': typeof OrcamentosNovoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -78,8 +102,11 @@ export interface FileRoutesById {
   '/configuracoes': typeof ConfiguracoesRoute
   '/corretor': typeof CorretorRoute
   '/diretoria': typeof DiretoriaRoute
+  '/orcamentos': typeof OrcamentosRouteWithChildren
+  '/produtos': typeof ProdutosRoute
   '/reset-password': typeof ResetPasswordRoute
   '/vendedor': typeof VendedorRoute
+  '/orcamentos/novo': typeof OrcamentosNovoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -89,8 +116,11 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/corretor'
     | '/diretoria'
+    | '/orcamentos'
+    | '/produtos'
     | '/reset-password'
     | '/vendedor'
+    | '/orcamentos/novo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -98,8 +128,11 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/corretor'
     | '/diretoria'
+    | '/orcamentos'
+    | '/produtos'
     | '/reset-password'
     | '/vendedor'
+    | '/orcamentos/novo'
   id:
     | '__root__'
     | '/'
@@ -107,8 +140,11 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/corretor'
     | '/diretoria'
+    | '/orcamentos'
+    | '/produtos'
     | '/reset-password'
     | '/vendedor'
+    | '/orcamentos/novo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,6 +153,8 @@ export interface RootRouteChildren {
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   CorretorRoute: typeof CorretorRoute
   DiretoriaRoute: typeof DiretoriaRoute
+  OrcamentosRoute: typeof OrcamentosRouteWithChildren
+  ProdutosRoute: typeof ProdutosRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VendedorRoute: typeof VendedorRoute
 }
@@ -158,6 +196,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiretoriaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orcamentos': {
+      id: '/orcamentos'
+      path: '/orcamentos'
+      fullPath: '/orcamentos'
+      preLoaderRoute: typeof OrcamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/produtos': {
+      id: '/produtos'
+      path: '/produtos'
+      fullPath: '/produtos'
+      preLoaderRoute: typeof ProdutosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -172,8 +224,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendedorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orcamentos/novo': {
+      id: '/orcamentos/novo'
+      path: '/novo'
+      fullPath: '/orcamentos/novo'
+      preLoaderRoute: typeof OrcamentosNovoRouteImport
+      parentRoute: typeof OrcamentosRoute
+    }
   }
 }
+
+interface OrcamentosRouteChildren {
+  OrcamentosNovoRoute: typeof OrcamentosNovoRoute
+}
+
+const OrcamentosRouteChildren: OrcamentosRouteChildren = {
+  OrcamentosNovoRoute: OrcamentosNovoRoute,
+}
+
+const OrcamentosRouteWithChildren = OrcamentosRoute._addFileChildren(
+  OrcamentosRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -181,6 +252,8 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracoesRoute: ConfiguracoesRoute,
   CorretorRoute: CorretorRoute,
   DiretoriaRoute: DiretoriaRoute,
+  OrcamentosRoute: OrcamentosRouteWithChildren,
+  ProdutosRoute: ProdutosRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VendedorRoute: VendedorRoute,
 }

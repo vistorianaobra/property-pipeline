@@ -156,6 +156,7 @@ function VendedorPage() {
       items={[
         { label: "Meu Funil (Kanban)", to: "/vendedor", icon: "kanban" },
         { label: "Visão Corretor (App)", to: "/corretor", icon: "users" },
+        { label: "Orçamentos", to: "/orcamentos", icon: "file-text" },
         { label: "Chamados", to: "/chamados", icon: "tickets" },
         { label: "Voltar à Diretoria", to: "/diretoria", icon: "back" },
       ]}

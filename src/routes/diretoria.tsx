@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -178,6 +178,8 @@ function DiretoriaPage() {
       items={[
         { label: "Funil da Diretoria", to: "/diretoria", icon: "kanban" },
         { label: "Painel de Vendas", to: "/vendedor", icon: "users" },
+        { label: "Orçamentos", to: "/orcamentos", icon: "file-text" },
+        { label: "Produtos (Base)", to: "/produtos", icon: "package" },
         { label: "Chamados", to: "/chamados", icon: "tickets" },
         { label: "Sair", to: "/", icon: "back" },
       ]}
