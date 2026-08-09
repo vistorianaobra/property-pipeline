@@ -139,8 +139,11 @@ function HomePage() {
           }
           toast.success("Bem-vinda, Tuane Carvalho Lopes! Acesso liberado.");
           setActiveAxis(null);
-          const target = activeAxis.key === "incorporadora" ? "/diretoria?user=tuane" : "/vendedor";
-          navigate({ to: target });
+          if (activeAxis.key === "incorporadora") {
+            navigate({ to: "/diretoria", search: { user: "tuane" } });
+          } else {
+            navigate({ to: "/vendedor" });
+          }
           return;
         }
 
@@ -152,7 +155,7 @@ function HomePage() {
           }
           toast.success("Bem-vinda, Bianca Reis! Acessando painel exclusivo de Diretoria...");
           setActiveAxis(null);
-          navigate({ to: "/diretoria?user=bianca" });
+          navigate({ to: "/diretoria", search: { user: "bianca" } });
           return;
         }
 
@@ -164,7 +167,7 @@ function HomePage() {
           }
           toast.success("Bem-vindo, Luis Leme! Acessando seus 136 leads...");
           setActiveAxis(null);
-          navigate({ to: "/corretor?user=luisleme" });
+          navigate({ to: "/corretor", search: { user: "luisleme" } });
           return;
         }
 
@@ -176,7 +179,7 @@ function HomePage() {
           }
           toast.success("Bem-vinda, Isly Fernandes! Acessando seu painel...");
           setActiveAxis(null);
-          navigate({ to: "/corretor?user=isly" });
+          navigate({ to: "/corretor", search: { user: "isly" } });
           return;
         }
 
