@@ -17,6 +17,8 @@ function getInitialLeads(): Lead[] {
         return parsed;
       }
     }
+    // Seed initial leads into localStorage on first load
+    localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(DEMO_LEADS));
   } catch (e) {
     console.error("Erro ao carregar leads do localStorage:", e);
   }
@@ -66,22 +68,35 @@ export function useLeads() {
     window.addEventListener(LEADS_EVENT, handleUpdate);
     window.addEventListener("storage", handleUpdate);
 
-    const channel = supabase
-      .channel("public:leads")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "leads" },
-        () => {
-          fetchFromSupabase();
-        },
-      )
-      .subscribe();
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel("public:leads")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "leads" },
+          () => {
+            fetchFromSupabase();
+          },
+        );
+      channel.subscribe((status: string) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn("Supabase Realtime channel fallback.");
+        }
+      });
+    } catch (err) {
+      console.warn("Supabase Realtime subscription error:", err);
+    }
 
     return () => {
       isMounted = false;
       window.removeEventListener(LEADS_EVENT, handleUpdate);
       window.removeEventListener("storage", handleUpdate);
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (_) {}
+      }
     };
   }, []);
 
@@ -163,6 +178,7 @@ function getInitialChamados(): Chamado[] {
         return parsed;
       }
     }
+    localStorage.setItem(CHAMADOS_STORAGE_KEY, JSON.stringify(DEMO_CHAMADOS));
   } catch (e) {
     console.error("Erro ao carregar chamados:", e);
   }
@@ -212,22 +228,35 @@ export function useChamados() {
     window.addEventListener(CHAMADOS_EVENT, handleUpdate);
     window.addEventListener("storage", handleUpdate);
 
-    const channel = supabase
-      .channel("public:chamados")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "chamados" },
-        () => {
-          fetchChamadosFromSupabase();
-        },
-      )
-      .subscribe();
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel("public:chamados")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "chamados" },
+          () => {
+            fetchChamadosFromSupabase();
+          },
+        );
+      channel.subscribe((status: string) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn("Supabase chamados channel fallback.");
+        }
+      });
+    } catch (err) {
+      console.warn("Supabase chamados Realtime error:", err);
+    }
 
     return () => {
       isMounted = false;
       window.removeEventListener(CHAMADOS_EVENT, handleUpdate);
       window.removeEventListener("storage", handleUpdate);
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (_) {}
+      }
     };
   }, []);
 
