@@ -218,7 +218,7 @@ function DiretoriaPage() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 flex items-center gap-1 font-medium">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Salvo no navegador
+              Sincronizado em tempo real na nuvem
             </span>
             <Button variant="outline" size="sm" onClick={exportBackup} className="rounded-sm text-xs">
               Baixar Backup
