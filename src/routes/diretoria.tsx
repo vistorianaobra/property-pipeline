@@ -187,6 +187,21 @@ function DiretoriaPage() {
     reader.readAsText(file);
   }
 
+  async function handleRestore4Perdidos() {
+    try {
+      const res = await fetch("/nexmove_backup_com_4_perdidos.json");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          importLeads(data);
+          toast.success("Backup de 4 leads no status Perdido restaurado com sucesso!");
+          return;
+        }
+      }
+    } catch (e) {}
+    toast.error("Erro ao carregar o arquivo de backup.");
+  }
+
   function exportBackup() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(leads, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -220,6 +235,9 @@ function DiretoriaPage() {
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               Sincronizado em tempo real na nuvem
             </span>
+            <Button variant="default" size="sm" onClick={handleRestore4Perdidos} className="rounded-sm text-xs bg-amber-800 hover:bg-amber-900 text-white font-semibold">
+              Restaurar 4 Perdidos
+            </Button>
             <Button variant="outline" size="sm" onClick={exportBackup} className="rounded-sm text-xs">
               Baixar Backup
             </Button>
