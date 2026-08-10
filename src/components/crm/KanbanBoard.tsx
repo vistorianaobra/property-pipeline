@@ -158,6 +158,24 @@ export function KanbanBoard({
                           <dd className="text-foreground/80">{lead.previsao_chaves}</dd>
                         </div>
                       </dl>
+
+                      {canMove && (
+                        <div className="mt-2.5 border-t border-border/40 pt-2">
+                          <label htmlFor={`select-status-${lead.id}`} className="sr-only">Mover etapa</label>
+                          <select
+                            id={`select-status-${lead.id}`}
+                            value={lead.status}
+                            onChange={(e) => onMove?.(lead.id, e.target.value as LeadStatus)}
+                            className="w-full text-[11px] font-medium bg-background border border-border rounded-sm px-2 py-1 text-foreground hover:border-foreground/40 focus:outline-none cursor-pointer"
+                          >
+                            <option value="NOVO">Mover: Novos leads</option>
+                            <option value="CONTATO">Mover: Contato inicial</option>
+                            <option value="PROPOSTA">Mover: Proposta enviada</option>
+                            <option value="FECHADO">Mover: Fechado (ganho)</option>
+                            <option value="PERDIDO">Mover: Perdido</option>
+                          </select>
+                        </div>
+                      )}
                     </article>
                   ))}
                   {columnLeads.length === 0 ? (

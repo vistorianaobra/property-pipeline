@@ -50,8 +50,22 @@ export function useLeads() {
 
         if (!error && data && data.length > 0) {
           if (isMounted) {
-            setLeadsState(data as Lead[]);
-            saveLeadsToStorage(data as Lead[]);
+            const currentLocal = getInitialLeads();
+            const localStatusMap = new Map(currentLocal.map((l) => [l.id, l.status]));
+            const localPhoneStatusMap = new Map(currentLocal.map((l) => [l.telefone_cliente, l.status]));
+
+            const merged = (data as Lead[]).map((remoteLead) => {
+              const localStatus =
+                localStatusMap.get(remoteLead.id) ??
+                localPhoneStatusMap.get(remoteLead.telefone_cliente);
+              return {
+                ...remoteLead,
+                status: localStatus ?? remoteLead.status,
+              };
+            });
+
+            setLeadsState(merged);
+            saveLeadsToStorage(merged);
           }
         }
       } catch (e) {
@@ -107,12 +121,20 @@ export function useLeads() {
     setLeadsState(updated);
 
     try {
-      await supabase
-        .from("leads")
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq("id", leadId);
+      const targetLead = current.find((l) => l.id === leadId);
+      if (targetLead?.telefone_cliente) {
+        await supabase
+          .from("leads")
+          .update({ status, updated_at: new Date().toISOString() })
+          .eq("telefone_cliente", targetLead.telefone_cliente);
+      } else {
+        await supabase
+          .from("leads")
+          .update({ status, updated_at: new Date().toISOString() })
+          .eq("id", leadId);
+      }
     } catch (e) {
-      console.error("Erro ao atualizar status no Supabase:", e);
+      console.warn("Erro ao atualizar status no Supabase:", e);
     }
   };
 
