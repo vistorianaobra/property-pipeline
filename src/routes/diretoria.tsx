@@ -58,7 +58,7 @@ function DiretoriaPage() {
   const targetId = isBianca ? "u-dir-bianca" : "u-dir-tuane";
   const user = directors.find((d) => d.id === targetId) ?? directors[0]!;
   
-  const { leads, moveLead, deleteLead } = useLeads();
+  const { leads, moveLead, deleteLead, importLeads, updateLead } = useLeads();
   const { chamados, resolveChamado } = useChamados();
   const [drawer, setDrawer] = useState<string | null>(null);
 
@@ -245,6 +245,7 @@ function DiretoriaPage() {
         canDelete
         onMove={handleMoveLead}
         onDelete={handleDeleteLead}
+        onUpdate={updateLead}
       />
 
       <section className="mt-14">

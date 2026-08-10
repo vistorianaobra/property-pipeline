@@ -60,7 +60,7 @@ function VendedorPage() {
   }, [navigate]);
 
   const user = DEMO_PROFILES.find((profile) => profile.id === "u-vend-tuane") ?? DEMO_PROFILES[0]!;
-  const { leads, moveLead } = useLeads();
+  const { leads, moveLead, updateLead } = useLeads();
   const [drawer, setDrawer] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -230,6 +230,7 @@ function VendedorPage() {
         canMove
         canDelete={false}
         onMove={(leadId, status: LeadStatus) => moveLead(leadId, status)}
+        onUpdate={updateLead}
       />
 
       <DetailDrawer

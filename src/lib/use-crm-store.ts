@@ -197,6 +197,30 @@ export function useLeads() {
     } catch (e) {}
   };
 
+  const updateLead = async (leadId: string, updates: Partial<Lead>) => {
+    const current = getSynchronousLeads();
+    const updated = current.map((lead) => (lead.id === leadId ? { ...lead, ...updates } : lead));
+    saveLeadsMultiStore(updated);
+    setLeadsState(updated);
+
+    saveToCloud(updated, getSynchronousChamados());
+
+    try {
+      const targetLead = current.find((l) => l.id === leadId);
+      if (targetLead?.telefone_cliente) {
+        await supabase
+          .from("leads")
+          .update({ ...updates, updated_at: new Date().toISOString() })
+          .eq("telefone_cliente", targetLead.telefone_cliente);
+      } else {
+        await supabase
+          .from("leads")
+          .update({ ...updates, updated_at: new Date().toISOString() })
+          .eq("id", leadId);
+      }
+    } catch (e) {}
+  };
+
   return {
     leads,
     moveLead,
@@ -204,6 +228,7 @@ export function useLeads() {
     addLead,
     resetLeads,
     importLeads,
+    updateLead,
   };
 }
 

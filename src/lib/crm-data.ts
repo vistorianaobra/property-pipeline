@@ -25,6 +25,7 @@ export interface Lead {
   vendedor_id: string;
   valor: number;
   created_at: string;
+  observacao?: string;
 }
 
 export interface Chamado {
