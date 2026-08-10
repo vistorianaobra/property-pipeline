@@ -8,21 +8,18 @@ import { DetailDrawer, type DrawerRow } from "@/components/crm/DetailDrawer";
 import { KanbanBoard } from "@/components/crm/KanbanBoard";
 import { KpiRow, type Kpi } from "@/components/crm/KpiRow";
 import { PageHeader } from "@/components/crm/PageHeader";
+import { useChamados, useLeads } from "@/lib/use-crm-store";
 import {
-  DEMO_CHAMADOS,
-  DEMO_LEADS,
   DEMO_PROFILES,
   formatBRL,
   greeting,
   todayLabel,
-  type Chamado,
-  type Lead,
   type LeadStatus,
 } from "@/lib/crm-data";
 
 export const Route = createFileRoute("/diretoria")({
   validateSearch: (search: Record<string, unknown>) => ({
-    user: (search["user"] as string) || (search["socia"] as string) || undefined,
+    user: (search.user as string) || (search.socia as string) || undefined,
   }),
   head: () => ({
     meta: [
@@ -61,8 +58,8 @@ function DiretoriaPage() {
   const targetId = isBianca ? "u-dir-bianca" : "u-dir-tuane";
   const user = directors.find((d) => d.id === targetId) ?? directors[0]!;
   
-  const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);
-  const [chamados, setChamados] = useState<Chamado[]>(DEMO_CHAMADOS);
+  const { leads, moveLead, deleteLead } = useLeads();
+  const { chamados, resolveChamado } = useChamados();
   const [drawer, setDrawer] = useState<string | null>(null);
 
   const corretores = DEMO_PROFILES.filter((profile) => profile.role === "CORRETOR");
@@ -161,15 +158,24 @@ function DiretoriaPage() {
     };
   }, [chamados, corretores, drawer, leads, vendedores]);
 
-  function moveLead(leadId: string, status: LeadStatus) {
-    setLeads((current) =>
-      current.map((lead) => (lead.id === leadId ? { ...lead, status } : lead)),
-    );
+  function handleMoveLead(leadId: string, status: LeadStatus) {
+    moveLead(leadId, status);
   }
 
-  function deleteLead(leadId: string) {
-    setLeads((current) => current.filter((lead) => lead.id !== leadId));
+  function handleDeleteLead(leadId: string) {
+    deleteLead(leadId);
     toast.success("Lead excluído.");
+  }
+
+  function exportBackup() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(leads, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `nexmove_leads_backup_${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    toast.success("Backup de leads baixado com sucesso!");
   }
 
   return (
@@ -188,6 +194,17 @@ function DiretoriaPage() {
         eyebrow={`${isBianca ? "Diretoria Criativa & Curadoria" : "Diretoria Comercial"} • ${todayLabel()}`}
         title={`${greeting()}, ${user.nome.split(" ")[0]}.`}
         subtitle={`${user.cargo} • Gestão autônoma e panorama geral.`}
+        action={
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 flex items-center gap-1 font-medium">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              Salvo automaticamente no navegador
+            </span>
+            <Button variant="outline" size="sm" onClick={exportBackup} className="rounded-sm text-xs">
+              Baixar Backup
+            </Button>
+          </div>
+        }
       />
 
       <div className="mt-10">
@@ -200,8 +217,8 @@ function DiretoriaPage() {
         profiles={DEMO_PROFILES}
         canMove
         canDelete
-        onMove={moveLead}
-        onDelete={deleteLead}
+        onMove={handleMoveLead}
+        onDelete={handleDeleteLead}
       />
 
       <section className="mt-14">
@@ -221,11 +238,7 @@ function DiretoriaPage() {
                   variant="outline"
                   className="rounded-sm"
                   onClick={() => {
-                    setChamados((current) =>
-                      current.map((item) =>
-                        item.id === chamado.id ? { ...item, status: "RESOLVIDO" } : item,
-                      ),
-                    );
+                    resolveChamado(chamado.id);
                     toast.success("Chamado resolvido.");
                   }}
                 >

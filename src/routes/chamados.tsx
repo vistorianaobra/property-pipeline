@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { CrmShell } from "@/components/crm/CrmShell";
 import { PageHeader } from "@/components/crm/PageHeader";
-import { DEMO_CHAMADOS, DEMO_PROFILES, todayLabel, type Chamado } from "@/lib/crm-data";
+import { useChamados } from "@/lib/use-crm-store";
+import { DEMO_PROFILES, todayLabel } from "@/lib/crm-data";
 
 export const Route = createFileRoute("/chamados")({
   head: () => ({
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/chamados")({
 
 function ChamadosPage() {
   const user = DEMO_PROFILES.find((profile) => profile.role === "VENDEDOR")!;
-  const [chamados, setChamados] = useState<Chamado[]>(DEMO_CHAMADOS);
+  const { chamados, addChamado } = useChamados();
   const [mensagem, setMensagem] = useState("");
 
   return (
@@ -53,16 +54,13 @@ function ChamadosPage() {
           className="space-y-4 border border-border bg-card p-6"
           onSubmit={(event) => {
             event.preventDefault();
-            setChamados((current) => [
-              {
-                id: `c-${current.length + 1}`,
-                requerente_id: user.id,
-                mensagem,
-                status: "ABERTO",
-                created_at: new Date().toISOString(),
-              },
-              ...current,
-            ]);
+            addChamado({
+              id: `c-${Date.now()}`,
+              requerente_id: user.id,
+              mensagem,
+              status: "ABERTO",
+              created_at: new Date().toISOString(),
+            });
             setMensagem("");
             toast.success("Chamado aberto.");
           }}

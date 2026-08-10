@@ -20,13 +20,12 @@ import { DetailDrawer, type DrawerRow } from "@/components/crm/DetailDrawer";
 import { KanbanBoard } from "@/components/crm/KanbanBoard";
 import { KpiRow, type Kpi } from "@/components/crm/KpiRow";
 import { PageHeader } from "@/components/crm/PageHeader";
+import { useLeads } from "@/lib/use-crm-store";
 import {
-  DEMO_LEADS,
   DEMO_PROFILES,
   formatBRL,
   greeting,
   todayLabel,
-  type Lead,
   type LeadStatus,
 } from "@/lib/crm-data";
 
@@ -61,7 +60,7 @@ function VendedorPage() {
   }, [navigate]);
 
   const user = DEMO_PROFILES.find((profile) => profile.id === "u-vend-tuane") ?? DEMO_PROFILES[0]!;
-  const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);
+  const { leads, moveLead } = useLeads();
   const [drawer, setDrawer] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -230,11 +229,7 @@ function VendedorPage() {
         profiles={DEMO_PROFILES}
         canMove
         canDelete={false}
-        onMove={(leadId, status: LeadStatus) =>
-          setLeads((current) =>
-            current.map((lead) => (lead.id === leadId ? { ...lead, status } : lead)),
-          )
-        }
+        onMove={(leadId, status: LeadStatus) => moveLead(leadId, status)}
       />
 
       <DetailDrawer

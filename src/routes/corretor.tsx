@@ -20,18 +20,17 @@ import { DetailDrawer } from "@/components/crm/DetailDrawer";
 import { KanbanBoard } from "@/components/crm/KanbanBoard";
 import { KpiRow, type Kpi } from "@/components/crm/KpiRow";
 import { PageHeader } from "@/components/crm/PageHeader";
+import { useLeads } from "@/lib/use-crm-store";
 import {
-  DEMO_LEADS,
   DEMO_PROFILES,
   formatBRL,
   greeting,
   todayLabel,
-  type Lead,
 } from "@/lib/crm-data";
 
 export const Route = createFileRoute("/corretor")({
   validateSearch: (search: Record<string, unknown>) => ({
-    user: (search["user"] as string) || (search["corretor"] as string) || undefined,
+    user: (search.user as string) || (search.corretor as string) || undefined,
   }),
   head: () => ({
     meta: [
@@ -58,7 +57,7 @@ function CorretorPage() {
   const targetId = isIsly ? "u-corr-isly" : "u-corr-luis";
   const user = corretores.find((c) => c.id === targetId) ?? corretores[0] ?? DEMO_PROFILES[0]!;
 
-  const [allLeads, setAllLeads] = useState<Lead[]>(DEMO_LEADS);
+  const { leads: allLeads, addLead } = useLeads();
   const leads = useMemo(
     () => allLeads.filter((lead) => lead.corretor_id === user.id),
     [allLeads, user.id],
@@ -134,21 +133,18 @@ function CorretorPage() {
                 className="space-y-4"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  setAllLeads((current) => [
-                    {
-                      id: `l-${current.length + 1}-${form.nome_cliente.length}`,
-                      nome_cliente: form.nome_cliente,
-                      telefone_cliente: form.telefone_cliente,
-                      empreendimento: form.empreendimento,
-                      previsao_chaves: form.previsao_chaves,
-                      status: "NOVO",
-                      corretor_id: user.id,
-                      vendedor_id: user.equipe_id ?? "u-vend-tuane",
-                      valor: 0,
-                      created_at: new Date().toISOString(),
-                    },
-                    ...current,
-                  ]);
+                  addLead({
+                    id: `l-${Date.now()}-${form.nome_cliente.length}`,
+                    nome_cliente: form.nome_cliente,
+                    telefone_cliente: form.telefone_cliente,
+                    empreendimento: form.empreendimento,
+                    previsao_chaves: form.previsao_chaves,
+                    status: "NOVO",
+                    corretor_id: user.id,
+                    vendedor_id: user.equipe_id ?? "u-vend-tuane",
+                    valor: 0,
+                    created_at: new Date().toISOString(),
+                  });
                   setForm({
                     nome_cliente: "",
                     telefone_cliente: "",
