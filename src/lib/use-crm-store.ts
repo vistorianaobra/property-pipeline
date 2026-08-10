@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { fetchFromCloud, saveToCloud } from "./cloud-store";
 import { DEMO_CHAMADOS, DEMO_LEADS, type Chamado, type Lead, type LeadStatus } from "./crm-data";
 import { getIDBItem, setIDBItem } from "./idb-storage";
 import { supabase } from "./supabase";
 
-const LEADS_STORAGE_KEY = "nexmove_leads_v3";
-const CHAMADOS_STORAGE_KEY = "nexmove_chamados_v2";
+const LEADS_STORAGE_KEY = "nexmove_leads_v4";
+const CHAMADOS_STORAGE_KEY = "nexmove_chamados_v3";
 const LEADS_EVENT = "nexmove_leads_updated";
 const CHAMADOS_EVENT = "nexmove_chamados_updated";
 
@@ -68,9 +69,7 @@ function saveLeadsMultiStore(leads: Lead[]) {
     console.error("Erro ao salvar storage:", e);
   }
 
-  // Asynchronously save to IndexedDB (survives iframe reloads)
   setIDBItem(LEADS_STORAGE_KEY, leads).catch(() => {});
-
   window.dispatchEvent(new Event(LEADS_EVENT));
 }
 
@@ -80,7 +79,7 @@ export function useLeads() {
   useEffect(() => {
     let isMounted = true;
 
-    // Load from IndexedDB asynchronously to restore if iframe reloaded
+    // Load from IndexedDB
     async function loadFromIDB() {
       try {
         const idbData = await getIDBItem<Lead[]>(LEADS_STORAGE_KEY);
@@ -95,38 +94,28 @@ export function useLeads() {
 
     loadFromIDB();
 
-    // Fetch from Supabase cloud
-    async function fetchFromSupabase() {
-      try {
-        const { data, error } = await supabase
-          .from("leads")
-          .select("*")
-          .order("created_at", { ascending: false });
+    // Sync cloud data across Incognito tabs and devices
+    async function syncCloudData() {
+      const cloudData = await fetchFromCloud();
+      if (cloudData && Array.isArray(cloudData.leads) && cloudData.leads.length > 0) {
+        if (isMounted) {
+          // Check if cloud data has different lead statuses
+          const currentLocalStr = JSON.stringify(window.__NEXMOVE_LEADS__ || []);
+          const cloudDataStr = JSON.stringify(cloudData.leads);
 
-        if (!error && data && data.length > 0) {
-          if (isMounted) {
-            const currentLocal = getSynchronousLeads();
-            const localStatusMap = new Map(currentLocal.map((l) => [l.id, l.status]));
-            const localPhoneStatusMap = new Map(currentLocal.map((l) => [l.telefone_cliente, l.status]));
-
-            const merged = (data as Lead[]).map((remoteLead) => {
-              const localStatus =
-                localStatusMap.get(remoteLead.id) ??
-                localPhoneStatusMap.get(remoteLead.telefone_cliente);
-              return {
-                ...remoteLead,
-                status: localStatus ?? remoteLead.status,
-              };
-            });
-
-            setLeadsState(merged);
-            saveLeadsMultiStore(merged);
+          if (currentLocalStr !== cloudDataStr) {
+            window.__NEXMOVE_LEADS__ = cloudData.leads;
+            setLeadsState(cloudData.leads);
+            saveLeadsMultiStore(cloudData.leads);
           }
         }
-      } catch (e) {}
+      }
     }
 
-    fetchFromSupabase();
+    syncCloudData();
+
+    // Poll cloud store every 3 seconds for real-time cross-browser / incognito / mobile sync
+    const intervalId = setInterval(syncCloudData, 3000);
 
     const handleUpdate = () => {
       setLeadsState(getSynchronousLeads());
@@ -137,6 +126,7 @@ export function useLeads() {
 
     return () => {
       isMounted = false;
+      clearInterval(intervalId);
       window.removeEventListener(LEADS_EVENT, handleUpdate);
       window.removeEventListener("storage", handleUpdate);
     };
@@ -145,8 +135,12 @@ export function useLeads() {
   const moveLead = async (leadId: string, status: LeadStatus) => {
     const current = getSynchronousLeads();
     const updated = current.map((lead) => (lead.id === leadId ? { ...lead, status } : lead));
+    
     saveLeadsMultiStore(updated);
     setLeadsState(updated);
+
+    // Save real-time update to cloud store
+    saveToCloud(updated, getSynchronousChamados());
 
     try {
       const targetLead = current.find((l) => l.id === leadId);
@@ -155,11 +149,6 @@ export function useLeads() {
           .from("leads")
           .update({ status, updated_at: new Date().toISOString() })
           .eq("telefone_cliente", targetLead.telefone_cliente);
-      } else {
-        await supabase
-          .from("leads")
-          .update({ status, updated_at: new Date().toISOString() })
-          .eq("id", leadId);
       }
     } catch (e) {}
   };
@@ -167,8 +156,11 @@ export function useLeads() {
   const deleteLead = async (leadId: string) => {
     const current = getSynchronousLeads();
     const updated = current.filter((lead) => lead.id !== leadId);
+    
     saveLeadsMultiStore(updated);
     setLeadsState(updated);
+
+    saveToCloud(updated, getSynchronousChamados());
 
     try {
       await supabase.from("leads").delete().eq("id", leadId);
@@ -178,8 +170,11 @@ export function useLeads() {
   const addLead = async (newLead: Lead) => {
     const current = getSynchronousLeads();
     const updated = [newLead, ...current];
+    
     saveLeadsMultiStore(updated);
     setLeadsState(updated);
+
+    saveToCloud(updated, getSynchronousChamados());
 
     try {
       await supabase.from("leads").insert(newLead);
@@ -189,11 +184,13 @@ export function useLeads() {
   const resetLeads = () => {
     saveLeadsMultiStore(DEMO_LEADS);
     setLeadsState(DEMO_LEADS);
+    saveToCloud(DEMO_LEADS, getSynchronousChamados());
   };
 
   const importLeads = async (newLeads: Lead[]) => {
     saveLeadsMultiStore(newLeads);
     setLeadsState(newLeads);
+    saveToCloud(newLeads, getSynchronousChamados());
 
     try {
       await supabase.from("leads").upsert(newLeads);
@@ -278,24 +275,6 @@ export function useChamados() {
 
     loadFromIDB();
 
-    async function fetchChamadosFromSupabase() {
-      try {
-        const { data, error } = await supabase
-          .from("chamados")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (!error && data && data.length > 0) {
-          if (isMounted) {
-            setChamadosState(data as Chamado[]);
-            saveChamadosMultiStore(data as Chamado[]);
-          }
-        }
-      } catch (e) {}
-    }
-
-    fetchChamadosFromSupabase();
-
     const handleUpdate = () => {
       setChamadosState(getSynchronousChamados());
     };
@@ -315,6 +294,7 @@ export function useChamados() {
     const updated = [newChamado, ...current];
     saveChamadosMultiStore(updated);
     setChamadosState(updated);
+    saveToCloud(getSynchronousLeads(), updated);
 
     try {
       await supabase.from("chamados").insert(newChamado);
@@ -328,6 +308,7 @@ export function useChamados() {
     );
     saveChamadosMultiStore(updated);
     setChamadosState(updated);
+    saveToCloud(getSynchronousLeads(), updated);
 
     try {
       await supabase.from("chamados").update({ status: "RESOLVIDO" }).eq("id", chamadoId);
