@@ -4,7 +4,8 @@ import { DEMO_CHAMADOS, DEMO_LEADS, type Chamado, type Lead, type LeadStatus } f
 import { getIDBItem, setIDBItem } from "./idb-storage";
 import { supabase } from "./supabase";
 
-const LEADS_STORAGE_KEY = "nexmove_leads_v5";
+const LEADS_STORAGE_KEY = "nexmove_leads_v6";
+const OVERRIDES_STORAGE_KEY = "nexmove_lead_overrides_v2";
 const CHAMADOS_STORAGE_KEY = "nexmove_chamados_v3";
 const LEADS_EVENT = "nexmove_leads_updated";
 const CHAMADOS_EVENT = "nexmove_chamados_updated";
@@ -14,6 +15,80 @@ declare global {
     __NEXMOVE_LEADS__?: Lead[];
     __NEXMOVE_CHAMADOS__?: Chamado[];
   }
+}
+
+export function getSavedStatusOverrides(): Map<string, Partial<Lead>> {
+  const overrides = new Map<string, Partial<Lead>>();
+  if (typeof window === "undefined") return overrides;
+
+  const storageKeys = [
+    OVERRIDES_STORAGE_KEY,
+    "nexmove_leads_v6",
+    "nexmove_leads_v5",
+    "nexmove_leads_v4",
+    "nexmove_leads_v3",
+    "nexmove_leads_v2",
+    "nexmove_leads_v1",
+  ];
+
+  for (const key of storageKeys) {
+    try {
+      const stored = localStorage.getItem(key) || sessionStorage.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          for (const lead of parsed) {
+            if (lead && (lead.id || lead.telefone_cliente)) {
+              const hasMoved = lead.status && lead.status !== "NOVO";
+              const hasName = lead.nome_cliente && lead.nome_cliente !== "Aguardando Contato";
+              const hasObs = Boolean(lead.observacao);
+
+              if (hasMoved || hasName || hasObs) {
+                const data: Partial<Lead> = {
+                  ...(hasMoved ? { status: lead.status } : {}),
+                  ...(hasName ? { nome_cliente: lead.nome_cliente } : {}),
+                  ...(hasObs ? { observacao: lead.observacao } : {}),
+                };
+                if (lead.id && !overrides.has(lead.id)) overrides.set(lead.id, data);
+                if (lead.telefone_cliente && !overrides.has(lead.telefone_cliente)) {
+                  overrides.set(lead.telefone_cliente, data);
+                }
+              }
+            }
+          }
+        } else if (typeof parsed === "object" && parsed !== null) {
+          for (const [id, val] of Object.entries(parsed)) {
+            if (val && typeof val === "object" && !overrides.has(id)) {
+              overrides.set(id, val as Partial<Lead>);
+            }
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  return overrides;
+}
+
+export function saveLeadOverride(leadId: string, phone: string | undefined, updates: Partial<Lead>) {
+  if (typeof window === "undefined") return;
+  try {
+    const currentMap = getSavedStatusOverrides();
+    const existing = (leadId ? currentMap.get(leadId) : null) || (phone ? currentMap.get(phone) : null) || {};
+    const mergedObj = { ...existing, ...updates };
+
+    if (leadId) currentMap.set(leadId, mergedObj);
+    if (phone) currentMap.set(phone, mergedObj);
+
+    const objToStore: Record<string, Partial<Lead>> = {};
+    currentMap.forEach((v, k) => {
+      objToStore[k] = v;
+    });
+
+    localStorage.setItem(OVERRIDES_STORAGE_KEY, JSON.stringify(objToStore));
+    sessionStorage.setItem(OVERRIDES_STORAGE_KEY, JSON.stringify(objToStore));
+    setIDBItem(OVERRIDES_STORAGE_KEY, objToStore).catch(() => {});
+  } catch (e) {}
 }
 
 export function mergeLeadsWithBaseline(storedLeads: Lead[]): Lead[] {
@@ -27,23 +102,29 @@ export function mergeLeadsWithBaseline(storedLeads: Lead[]): Lead[] {
     }
   }
 
-  // Always preserve all 142 baseline DEMO_LEADS
+  const overridesMap = getSavedStatusOverrides();
+
+  // Merge baseline DEMO_LEADS with stored updates and recovered overrides
   const mergedBaseline = DEMO_LEADS.map((baseLead) => {
-    const override =
+    const stored =
       storedMapById.get(baseLead.id) ?? storedMapByPhone.get(baseLead.telefone_cliente);
-    if (override) {
-      return {
-        ...baseLead,
-        ...override,
-        status: override.status || baseLead.status,
-        nome_cliente: override.nome_cliente || baseLead.nome_cliente,
-        observacao: override.observacao ?? baseLead.observacao,
-      };
-    }
-    return baseLead;
+    const override =
+      overridesMap.get(baseLead.id) ?? overridesMap.get(baseLead.telefone_cliente);
+
+    const finalStatus = override?.status ?? stored?.status ?? baseLead.status;
+    const finalName = override?.nome_cliente ?? stored?.nome_cliente ?? baseLead.nome_cliente;
+    const finalObs = override?.observacao ?? stored?.observacao ?? baseLead.observacao;
+
+    return {
+      ...baseLead,
+      ...stored,
+      status: finalStatus,
+      nome_cliente: finalName,
+      observacao: finalObs,
+    };
   });
 
-  // Preserve any custom newly added leads
+  // Preserve any custom user-added leads
   const baselineIds = new Set(DEMO_LEADS.map((l) => l.id));
   const customLeads = Array.isArray(storedLeads)
     ? storedLeads.filter(
@@ -112,7 +193,7 @@ export function useLeads() {
   useEffect(() => {
     let isMounted = true;
 
-    // Load from IndexedDB
+    // Load from IndexedDB on mount
     async function loadFromIDB() {
       try {
         const idbData = await getIDBItem<Lead[]>(LEADS_STORAGE_KEY);
@@ -128,28 +209,20 @@ export function useLeads() {
 
     loadFromIDB();
 
-    // Sync cloud data across Incognito tabs and devices
+    // Fetch cloud state on initial mount only
     async function syncCloudData() {
       const cloudData = await fetchFromCloud();
-      if (cloudData && Array.isArray(cloudData.leads)) {
+      if (cloudData && Array.isArray(cloudData.leads) && cloudData.leads.length > 0) {
         if (isMounted) {
           const merged = mergeLeadsWithBaseline(cloudData.leads);
-          const currentLocalStr = JSON.stringify(window.__NEXMOVE_LEADS__ || []);
-          const cloudDataStr = JSON.stringify(merged);
-
-          if (currentLocalStr !== cloudDataStr) {
-            window.__NEXMOVE_LEADS__ = merged;
-            setLeadsState(merged);
-            saveLeadsMultiStore(merged);
-          }
+          window.__NEXMOVE_LEADS__ = merged;
+          setLeadsState(merged);
+          saveLeadsMultiStore(merged);
         }
       }
     }
 
     syncCloudData();
-
-    // Poll cloud store every 3 seconds for real-time cross-browser sync
-    const intervalId = setInterval(syncCloudData, 3000);
 
     const handleUpdate = () => {
       setLeadsState(getSynchronousLeads());
@@ -160,7 +233,6 @@ export function useLeads() {
 
     return () => {
       isMounted = false;
-      clearInterval(intervalId);
       window.removeEventListener(LEADS_EVENT, handleUpdate);
       window.removeEventListener("storage", handleUpdate);
     };
@@ -168,6 +240,10 @@ export function useLeads() {
 
   const moveLead = async (leadId: string, status: LeadStatus) => {
     const current = getSynchronousLeads();
+    const targetLead = current.find((l) => l.id === leadId);
+    
+    saveLeadOverride(leadId, targetLead?.telefone_cliente, { status });
+
     const updated = current.map((lead) => (lead.id === leadId ? { ...lead, status } : lead));
     
     saveLeadsMultiStore(updated);
@@ -176,7 +252,6 @@ export function useLeads() {
     saveToCloud(updated, getSynchronousChamados());
 
     try {
-      const targetLead = current.find((l) => l.id === leadId);
       if (targetLead?.telefone_cliente) {
         await supabase
           .from("leads")
@@ -232,6 +307,10 @@ export function useLeads() {
 
   const updateLead = async (leadId: string, updates: Partial<Lead>) => {
     const current = getSynchronousLeads();
+    const targetLead = current.find((l) => l.id === leadId);
+
+    saveLeadOverride(leadId, targetLead?.telefone_cliente, updates);
+
     const updated = current.map((lead) => (lead.id === leadId ? { ...lead, ...updates } : lead));
     saveLeadsMultiStore(updated);
     setLeadsState(updated);
@@ -239,7 +318,6 @@ export function useLeads() {
     saveToCloud(updated, getSynchronousChamados());
 
     try {
-      const targetLead = current.find((l) => l.id === leadId);
       if (targetLead?.telefone_cliente) {
         await supabase
           .from("leads")
