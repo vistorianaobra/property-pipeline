@@ -74,12 +74,18 @@ export function useLeads() {
     setLeadsState(DEMO_LEADS);
   };
 
+  const importLeads = (newLeads: Lead[]) => {
+    saveLeadsToStorage(newLeads);
+    setLeadsState(newLeads);
+  };
+
   return {
     leads,
     moveLead,
     deleteLead,
     addLead,
     resetLeads,
+    importLeads,
   };
 }
 

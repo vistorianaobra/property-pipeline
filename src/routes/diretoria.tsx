@@ -167,6 +167,26 @@ function DiretoriaPage() {
     toast.success("Lead excluído.");
   }
 
+  function handleImportBackup(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        if (Array.isArray(data)) {
+          importLeads(data);
+          toast.success("Backup importado com sucesso! Seus contatos foram restaurados.");
+        } else {
+          toast.error("Formato de arquivo de backup inválido.");
+        }
+      } catch (err) {
+        toast.error("Erro ao ler o arquivo de backup.");
+      }
+    };
+    reader.readAsText(file);
+  }
+
   function exportBackup() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(leads, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -195,14 +215,20 @@ function DiretoriaPage() {
         title={`${greeting()}, ${user.nome.split(" ")[0]}.`}
         subtitle={`${user.cargo} • Gestão autônoma e panorama geral.`}
         action={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 flex items-center gap-1 font-medium">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Salvo automaticamente no navegador
+              Salvo no navegador
             </span>
             <Button variant="outline" size="sm" onClick={exportBackup} className="rounded-sm text-xs">
               Baixar Backup
             </Button>
+            <label className="cursor-pointer">
+              <span className="inline-flex items-center justify-center rounded-sm text-xs font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 py-1">
+                Importar Backup
+              </span>
+              <input type="file" accept=".json" onChange={handleImportBackup} className="hidden" />
+            </label>
           </div>
         }
       />
