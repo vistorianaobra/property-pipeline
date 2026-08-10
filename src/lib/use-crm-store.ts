@@ -1,46 +1,101 @@
 import { useEffect, useState } from "react";
 import { DEMO_CHAMADOS, DEMO_LEADS, type Chamado, type Lead, type LeadStatus } from "./crm-data";
+import { getIDBItem, setIDBItem } from "./idb-storage";
 import { supabase } from "./supabase";
 
-const LEADS_STORAGE_KEY = "nexmove_leads_v2";
-const CHAMADOS_STORAGE_KEY = "nexmove_chamados_v1";
+const LEADS_STORAGE_KEY = "nexmove_leads_v3";
+const CHAMADOS_STORAGE_KEY = "nexmove_chamados_v2";
 const LEADS_EVENT = "nexmove_leads_updated";
 const CHAMADOS_EVENT = "nexmove_chamados_updated";
 
-function getInitialLeads(): Lead[] {
+declare global {
+  interface Window {
+    __NEXMOVE_LEADS__?: Lead[];
+    __NEXMOVE_CHAMADOS__?: Chamado[];
+  }
+}
+
+function getSynchronousLeads(): Lead[] {
   if (typeof window === "undefined") return DEMO_LEADS;
+
+  // 1. Check in-memory global cache
+  if (window.__NEXMOVE_LEADS__ && window.__NEXMOVE_LEADS__.length > 0) {
+    return window.__NEXMOVE_LEADS__;
+  }
+
+  // 2. Check sessionStorage
   try {
-    const stored = localStorage.getItem(LEADS_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
+    const sessionData = sessionStorage.getItem(LEADS_STORAGE_KEY);
+    if (sessionData) {
+      const parsed = JSON.parse(sessionData);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        window.__NEXMOVE_LEADS__ = parsed;
         return parsed;
       }
     }
-    // Seed initial leads into localStorage on first load
-    localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(DEMO_LEADS));
-  } catch (e) {
-    console.error("Erro ao carregar leads do localStorage:", e);
-  }
+  } catch (e) {}
+
+  // 3. Check localStorage
+  try {
+    const localData = localStorage.getItem(LEADS_STORAGE_KEY);
+    if (localData) {
+      const parsed = JSON.parse(localData);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        window.__NEXMOVE_LEADS__ = parsed;
+        try {
+          sessionStorage.setItem(LEADS_STORAGE_KEY, localData);
+        } catch (_) {}
+        return parsed;
+      }
+    }
+  } catch (e) {}
+
+  // 4. Fallback to default leads array
+  window.__NEXMOVE_LEADS__ = DEMO_LEADS;
   return DEMO_LEADS;
 }
 
-function saveLeadsToStorage(leads: Lead[]) {
+function saveLeadsMultiStore(leads: Lead[]) {
   if (typeof window === "undefined") return;
+
+  window.__NEXMOVE_LEADS__ = leads;
+
   try {
-    localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(leads));
-    window.dispatchEvent(new Event(LEADS_EVENT));
+    const serialized = JSON.stringify(leads);
+    sessionStorage.setItem(LEADS_STORAGE_KEY, serialized);
+    localStorage.setItem(LEADS_STORAGE_KEY, serialized);
   } catch (e) {
-    console.error("Erro ao salvar leads no localStorage:", e);
+    console.error("Erro ao salvar storage:", e);
   }
+
+  // Asynchronously save to IndexedDB (survives iframe reloads)
+  setIDBItem(LEADS_STORAGE_KEY, leads).catch(() => {});
+
+  window.dispatchEvent(new Event(LEADS_EVENT));
 }
 
 export function useLeads() {
-  const [leads, setLeadsState] = useState<Lead[]>(getInitialLeads);
+  const [leads, setLeadsState] = useState<Lead[]>(getSynchronousLeads);
 
   useEffect(() => {
     let isMounted = true;
 
+    // Load from IndexedDB asynchronously to restore if iframe reloaded
+    async function loadFromIDB() {
+      try {
+        const idbData = await getIDBItem<Lead[]>(LEADS_STORAGE_KEY);
+        if (idbData && Array.isArray(idbData) && idbData.length > 0) {
+          if (isMounted) {
+            window.__NEXMOVE_LEADS__ = idbData;
+            setLeadsState(idbData);
+          }
+        }
+      } catch (e) {}
+    }
+
+    loadFromIDB();
+
+    // Fetch from Supabase cloud
     async function fetchFromSupabase() {
       try {
         const { data, error } = await supabase
@@ -50,7 +105,7 @@ export function useLeads() {
 
         if (!error && data && data.length > 0) {
           if (isMounted) {
-            const currentLocal = getInitialLeads();
+            const currentLocal = getSynchronousLeads();
             const localStatusMap = new Map(currentLocal.map((l) => [l.id, l.status]));
             const localPhoneStatusMap = new Map(currentLocal.map((l) => [l.telefone_cliente, l.status]));
 
@@ -65,59 +120,32 @@ export function useLeads() {
             });
 
             setLeadsState(merged);
-            saveLeadsToStorage(merged);
+            saveLeadsMultiStore(merged);
           }
         }
-      } catch (e) {
-        console.warn("Supabase leads fallback to localStorage:", e);
-      }
+      } catch (e) {}
     }
 
     fetchFromSupabase();
 
     const handleUpdate = () => {
-      setLeadsState(getInitialLeads());
+      setLeadsState(getSynchronousLeads());
     };
 
     window.addEventListener(LEADS_EVENT, handleUpdate);
     window.addEventListener("storage", handleUpdate);
 
-    let channel: any = null;
-    try {
-      channel = supabase
-        .channel("public:leads")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "leads" },
-          () => {
-            fetchFromSupabase();
-          },
-        );
-      channel.subscribe((status: string) => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          console.warn("Supabase Realtime channel fallback.");
-        }
-      });
-    } catch (err) {
-      console.warn("Supabase Realtime subscription error:", err);
-    }
-
     return () => {
       isMounted = false;
       window.removeEventListener(LEADS_EVENT, handleUpdate);
       window.removeEventListener("storage", handleUpdate);
-      if (channel) {
-        try {
-          supabase.removeChannel(channel);
-        } catch (_) {}
-      }
     };
   }, []);
 
   const moveLead = async (leadId: string, status: LeadStatus) => {
-    const current = getInitialLeads();
+    const current = getSynchronousLeads();
     const updated = current.map((lead) => (lead.id === leadId ? { ...lead, status } : lead));
-    saveLeadsToStorage(updated);
+    saveLeadsMultiStore(updated);
     setLeadsState(updated);
 
     try {
@@ -133,51 +161,43 @@ export function useLeads() {
           .update({ status, updated_at: new Date().toISOString() })
           .eq("id", leadId);
       }
-    } catch (e) {
-      console.warn("Erro ao atualizar status no Supabase:", e);
-    }
+    } catch (e) {}
   };
 
   const deleteLead = async (leadId: string) => {
-    const current = getInitialLeads();
+    const current = getSynchronousLeads();
     const updated = current.filter((lead) => lead.id !== leadId);
-    saveLeadsToStorage(updated);
+    saveLeadsMultiStore(updated);
     setLeadsState(updated);
 
     try {
       await supabase.from("leads").delete().eq("id", leadId);
-    } catch (e) {
-      console.error("Erro ao deletar lead no Supabase:", e);
-    }
+    } catch (e) {}
   };
 
   const addLead = async (newLead: Lead) => {
-    const current = getInitialLeads();
+    const current = getSynchronousLeads();
     const updated = [newLead, ...current];
-    saveLeadsToStorage(updated);
+    saveLeadsMultiStore(updated);
     setLeadsState(updated);
 
     try {
       await supabase.from("leads").insert(newLead);
-    } catch (e) {
-      console.error("Erro ao inserir lead no Supabase:", e);
-    }
+    } catch (e) {}
   };
 
   const resetLeads = () => {
-    saveLeadsToStorage(DEMO_LEADS);
+    saveLeadsMultiStore(DEMO_LEADS);
     setLeadsState(DEMO_LEADS);
   };
 
   const importLeads = async (newLeads: Lead[]) => {
-    saveLeadsToStorage(newLeads);
+    saveLeadsMultiStore(newLeads);
     setLeadsState(newLeads);
 
     try {
       await supabase.from("leads").upsert(newLeads);
-    } catch (e) {
-      console.error("Erro ao importar leads no Supabase:", e);
-    }
+    } catch (e) {}
   };
 
   return {
@@ -190,38 +210,73 @@ export function useLeads() {
   };
 }
 
-function getInitialChamados(): Chamado[] {
+function getSynchronousChamados(): Chamado[] {
   if (typeof window === "undefined") return DEMO_CHAMADOS;
+
+  if (window.__NEXMOVE_CHAMADOS__ && window.__NEXMOVE_CHAMADOS__.length > 0) {
+    return window.__NEXMOVE_CHAMADOS__;
+  }
+
   try {
-    const stored = localStorage.getItem(CHAMADOS_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
+    const sessionData = sessionStorage.getItem(CHAMADOS_STORAGE_KEY);
+    if (sessionData) {
+      const parsed = JSON.parse(sessionData);
       if (Array.isArray(parsed)) {
+        window.__NEXMOVE_CHAMADOS__ = parsed;
         return parsed;
       }
     }
-    localStorage.setItem(CHAMADOS_STORAGE_KEY, JSON.stringify(DEMO_CHAMADOS));
-  } catch (e) {
-    console.error("Erro ao carregar chamados:", e);
-  }
+  } catch (e) {}
+
+  try {
+    const localData = localStorage.getItem(CHAMADOS_STORAGE_KEY);
+    if (localData) {
+      const parsed = JSON.parse(localData);
+      if (Array.isArray(parsed)) {
+        window.__NEXMOVE_CHAMADOS__ = parsed;
+        return parsed;
+      }
+    }
+  } catch (e) {}
+
+  window.__NEXMOVE_CHAMADOS__ = DEMO_CHAMADOS;
   return DEMO_CHAMADOS;
 }
 
-function saveChamadosToStorage(chamados: Chamado[]) {
+function saveChamadosMultiStore(chamados: Chamado[]) {
   if (typeof window === "undefined") return;
+
+  window.__NEXMOVE_CHAMADOS__ = chamados;
+
   try {
-    localStorage.setItem(CHAMADOS_STORAGE_KEY, JSON.stringify(chamados));
-    window.dispatchEvent(new Event(CHAMADOS_EVENT));
-  } catch (e) {
-    console.error("Erro ao salvar chamados:", e);
-  }
+    const serialized = JSON.stringify(chamados);
+    sessionStorage.setItem(CHAMADOS_STORAGE_KEY, serialized);
+    localStorage.setItem(CHAMADOS_STORAGE_KEY, serialized);
+  } catch (e) {}
+
+  setIDBItem(CHAMADOS_STORAGE_KEY, chamados).catch(() => {});
+  window.dispatchEvent(new Event(CHAMADOS_EVENT));
 }
 
 export function useChamados() {
-  const [chamados, setChamadosState] = useState<Chamado[]>(getInitialChamados);
+  const [chamados, setChamadosState] = useState<Chamado[]>(getSynchronousChamados);
 
   useEffect(() => {
     let isMounted = true;
+
+    async function loadFromIDB() {
+      try {
+        const idbData = await getIDBItem<Chamado[]>(CHAMADOS_STORAGE_KEY);
+        if (idbData && Array.isArray(idbData)) {
+          if (isMounted) {
+            window.__NEXMOVE_CHAMADOS__ = idbData;
+            setChamadosState(idbData);
+          }
+        }
+      } catch (e) {}
+    }
+
+    loadFromIDB();
 
     async function fetchChamadosFromSupabase() {
       try {
@@ -233,81 +288,50 @@ export function useChamados() {
         if (!error && data && data.length > 0) {
           if (isMounted) {
             setChamadosState(data as Chamado[]);
-            saveChamadosToStorage(data as Chamado[]);
+            saveChamadosMultiStore(data as Chamado[]);
           }
         }
-      } catch (e) {
-        console.warn("Supabase chamados fallback:", e);
-      }
+      } catch (e) {}
     }
 
     fetchChamadosFromSupabase();
 
     const handleUpdate = () => {
-      setChamadosState(getInitialChamados());
+      setChamadosState(getSynchronousChamados());
     };
 
     window.addEventListener(CHAMADOS_EVENT, handleUpdate);
     window.addEventListener("storage", handleUpdate);
 
-    let channel: any = null;
-    try {
-      channel = supabase
-        .channel("public:chamados")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "chamados" },
-          () => {
-            fetchChamadosFromSupabase();
-          },
-        );
-      channel.subscribe((status: string) => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          console.warn("Supabase chamados channel fallback.");
-        }
-      });
-    } catch (err) {
-      console.warn("Supabase chamados Realtime error:", err);
-    }
-
     return () => {
       isMounted = false;
       window.removeEventListener(CHAMADOS_EVENT, handleUpdate);
       window.removeEventListener("storage", handleUpdate);
-      if (channel) {
-        try {
-          supabase.removeChannel(channel);
-        } catch (_) {}
-      }
     };
   }, []);
 
   const addChamado = async (newChamado: Chamado) => {
-    const current = getInitialChamados();
+    const current = getSynchronousChamados();
     const updated = [newChamado, ...current];
-    saveChamadosToStorage(updated);
+    saveChamadosMultiStore(updated);
     setChamadosState(updated);
 
     try {
       await supabase.from("chamados").insert(newChamado);
-    } catch (e) {
-      console.error("Erro ao criar chamado no Supabase:", e);
-    }
+    } catch (e) {}
   };
 
   const resolveChamado = async (chamadoId: string) => {
-    const current = getInitialChamados();
+    const current = getSynchronousChamados();
     const updated = current.map((c) =>
       c.id === chamadoId ? { ...c, status: "RESOLVIDO" as const } : c,
     );
-    saveChamadosToStorage(updated);
+    saveChamadosMultiStore(updated);
     setChamadosState(updated);
 
     try {
       await supabase.from("chamados").update({ status: "RESOLVIDO" }).eq("id", chamadoId);
-    } catch (e) {
-      console.error("Erro ao resolver chamado no Supabase:", e);
-    }
+    } catch (e) {}
   };
 
   return {
