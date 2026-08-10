@@ -4,7 +4,7 @@ import { DEMO_CHAMADOS, DEMO_LEADS, type Chamado, type Lead, type LeadStatus } f
 import { getIDBItem, setIDBItem } from "./idb-storage";
 import { supabase } from "./supabase";
 
-const LEADS_STORAGE_KEY = "nexmove_leads_v4";
+const LEADS_STORAGE_KEY = "nexmove_leads_v5";
 const CHAMADOS_STORAGE_KEY = "nexmove_chamados_v3";
 const LEADS_EVENT = "nexmove_leads_updated";
 const CHAMADOS_EVENT = "nexmove_chamados_updated";
@@ -16,60 +16,93 @@ declare global {
   }
 }
 
+export function mergeLeadsWithBaseline(storedLeads: Lead[]): Lead[] {
+  const storedMapById = new Map<string, Lead>();
+  const storedMapByPhone = new Map<string, Lead>();
+
+  if (Array.isArray(storedLeads)) {
+    for (const lead of storedLeads) {
+      if (lead.id) storedMapById.set(lead.id, lead);
+      if (lead.telefone_cliente) storedMapByPhone.set(lead.telefone_cliente, lead);
+    }
+  }
+
+  // Always preserve all 142 baseline DEMO_LEADS
+  const mergedBaseline = DEMO_LEADS.map((baseLead) => {
+    const override =
+      storedMapById.get(baseLead.id) ?? storedMapByPhone.get(baseLead.telefone_cliente);
+    if (override) {
+      return {
+        ...baseLead,
+        ...override,
+        status: override.status || baseLead.status,
+        nome_cliente: override.nome_cliente || baseLead.nome_cliente,
+        observacao: override.observacao ?? baseLead.observacao,
+      };
+    }
+    return baseLead;
+  });
+
+  // Preserve any custom newly added leads
+  const baselineIds = new Set(DEMO_LEADS.map((l) => l.id));
+  const customLeads = Array.isArray(storedLeads)
+    ? storedLeads.filter(
+        (l) =>
+          !baselineIds.has(l.id) &&
+          !DEMO_LEADS.some((b) => b.telefone_cliente === l.telefone_cliente),
+      )
+    : [];
+
+  return [...customLeads, ...mergedBaseline];
+}
+
 function getSynchronousLeads(): Lead[] {
   if (typeof window === "undefined") return DEMO_LEADS;
 
-  // 1. Check in-memory global cache
+  let rawLeads: Lead[] = DEMO_LEADS;
+
   if (window.__NEXMOVE_LEADS__ && window.__NEXMOVE_LEADS__.length > 0) {
-    return window.__NEXMOVE_LEADS__;
+    rawLeads = window.__NEXMOVE_LEADS__;
+  } else {
+    try {
+      const sessionData = sessionStorage.getItem(LEADS_STORAGE_KEY);
+      if (sessionData) {
+        const parsed = JSON.parse(sessionData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          rawLeads = parsed;
+        }
+      } else {
+        const localData = localStorage.getItem(LEADS_STORAGE_KEY);
+        if (localData) {
+          const parsed = JSON.parse(localData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            rawLeads = parsed;
+          }
+        }
+      }
+    } catch (e) {}
   }
 
-  // 2. Check sessionStorage
-  try {
-    const sessionData = sessionStorage.getItem(LEADS_STORAGE_KEY);
-    if (sessionData) {
-      const parsed = JSON.parse(sessionData);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        window.__NEXMOVE_LEADS__ = parsed;
-        return parsed;
-      }
-    }
-  } catch (e) {}
-
-  // 3. Check localStorage
-  try {
-    const localData = localStorage.getItem(LEADS_STORAGE_KEY);
-    if (localData) {
-      const parsed = JSON.parse(localData);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        window.__NEXMOVE_LEADS__ = parsed;
-        try {
-          sessionStorage.setItem(LEADS_STORAGE_KEY, localData);
-        } catch (_) {}
-        return parsed;
-      }
-    }
-  } catch (e) {}
-
-  // 4. Fallback to default leads array
-  window.__NEXMOVE_LEADS__ = DEMO_LEADS;
-  return DEMO_LEADS;
+  const merged = mergeLeadsWithBaseline(rawLeads);
+  window.__NEXMOVE_LEADS__ = merged;
+  return merged;
 }
 
 function saveLeadsMultiStore(leads: Lead[]) {
   if (typeof window === "undefined") return;
 
-  window.__NEXMOVE_LEADS__ = leads;
+  const merged = mergeLeadsWithBaseline(leads);
+  window.__NEXMOVE_LEADS__ = merged;
 
   try {
-    const serialized = JSON.stringify(leads);
+    const serialized = JSON.stringify(merged);
     sessionStorage.setItem(LEADS_STORAGE_KEY, serialized);
     localStorage.setItem(LEADS_STORAGE_KEY, serialized);
   } catch (e) {
     console.error("Erro ao salvar storage:", e);
   }
 
-  setIDBItem(LEADS_STORAGE_KEY, leads).catch(() => {});
+  setIDBItem(LEADS_STORAGE_KEY, merged).catch(() => {});
   window.dispatchEvent(new Event(LEADS_EVENT));
 }
 
@@ -85,8 +118,9 @@ export function useLeads() {
         const idbData = await getIDBItem<Lead[]>(LEADS_STORAGE_KEY);
         if (idbData && Array.isArray(idbData) && idbData.length > 0) {
           if (isMounted) {
-            window.__NEXMOVE_LEADS__ = idbData;
-            setLeadsState(idbData);
+            const merged = mergeLeadsWithBaseline(idbData);
+            window.__NEXMOVE_LEADS__ = merged;
+            setLeadsState(merged);
           }
         }
       } catch (e) {}
@@ -97,16 +131,16 @@ export function useLeads() {
     // Sync cloud data across Incognito tabs and devices
     async function syncCloudData() {
       const cloudData = await fetchFromCloud();
-      if (cloudData && Array.isArray(cloudData.leads) && cloudData.leads.length > 0) {
+      if (cloudData && Array.isArray(cloudData.leads)) {
         if (isMounted) {
-          // Check if cloud data has different lead statuses
+          const merged = mergeLeadsWithBaseline(cloudData.leads);
           const currentLocalStr = JSON.stringify(window.__NEXMOVE_LEADS__ || []);
-          const cloudDataStr = JSON.stringify(cloudData.leads);
+          const cloudDataStr = JSON.stringify(merged);
 
           if (currentLocalStr !== cloudDataStr) {
-            window.__NEXMOVE_LEADS__ = cloudData.leads;
-            setLeadsState(cloudData.leads);
-            saveLeadsMultiStore(cloudData.leads);
+            window.__NEXMOVE_LEADS__ = merged;
+            setLeadsState(merged);
+            saveLeadsMultiStore(merged);
           }
         }
       }
@@ -114,7 +148,7 @@ export function useLeads() {
 
     syncCloudData();
 
-    // Poll cloud store every 3 seconds for real-time cross-browser / incognito / mobile sync
+    // Poll cloud store every 3 seconds for real-time cross-browser sync
     const intervalId = setInterval(syncCloudData, 3000);
 
     const handleUpdate = () => {
@@ -139,7 +173,6 @@ export function useLeads() {
     saveLeadsMultiStore(updated);
     setLeadsState(updated);
 
-    // Save real-time update to cloud store
     saveToCloud(updated, getSynchronousChamados());
 
     try {
